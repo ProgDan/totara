@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  * Copyright (C) 1999 onwards Martin Dougiamas
  *
  * This program is free software; you can redistribute it and/or modify
@@ -299,16 +299,16 @@ class rb_source_user extends rb_base_source {
                 'base.id'
             ),
             new rb_content_option(
-                'current_org',
-                get_string('currentorg', 'rb_source_course_completion'),
-                'organisation.path',
-                'organisation'
-            ),
-            new rb_content_option(
                 'current_pos',
-                get_string('currentpos', 'rb_source_course_completion'),
+                get_string('currentpos', 'totara_reportbuilder'),
                 'position.path',
                 'position'
+            ),
+            new rb_content_option(
+                'current_org',
+                get_string('currentorg', 'totara_reportbuilder'),
+                'organisation.path',
+                'organisation'
             ),
             new rb_content_option(
                 'date',
@@ -414,18 +414,24 @@ class rb_source_user extends rb_base_source {
         $goal_link = html_writer::link("{$CFG->wwwroot}/totara/hierarchy/prefix/goal/mygoals.php?userid={$userid}", $goalstr);
 
         require_once($CFG->dirroot . '/totara/plan/lib.php');
-        $show_plan_link = dp_can_view_users_plans($userid);
+        $show_plan_link = !empty($CFG->enablelearningplans) && dp_can_view_users_plans($userid);
         $links = $show_plan_link ? ($plan_link.'&nbsp;|&nbsp;') : '';
         $links .= $profile_link.'&nbsp;|&nbsp;';
         $links .= $booking_link.'&nbsp;|&nbsp;';
         $links .= $rol_link.'&nbsp;|&nbsp;';
         // Hide link for temporary managers.
         $tempman = totara_get_manager($userid, null, false, true);
-        if (!$tempman || $tempman->id != $USER->id) {
+        if ((!$tempman || $tempman->id != $USER->id) && $CFG->enableappraisals) {
             $links .= $appraisal_link.'&nbsp;|&nbsp;';
         }
-        $links .= $feedback_link.'&nbsp;|&nbsp;';
-        $links .= $goal_link.'&nbsp;|&nbsp;';
+
+        if (!empty($CFG->enablefeedback360)) {
+            $links .= $feedback_link.'&nbsp;|&nbsp;';
+        }
+
+        if (!empty($CFG->enablegoals)) {
+            $links .= $goal_link.'&nbsp;|&nbsp;';
+        }
         $links .= $required_link;
 
         $table = new html_table();

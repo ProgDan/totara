@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -85,6 +85,9 @@ class upload_form extends moodleform {
         $mform->addElement('select', 'csvencoding', get_string('csvencoding', 'totara_completionimport'), $encodings);
         $mform->setType('csvdelimiter', PARAM_TEXT);
         $mform->setDefault('csvencoding', 'UTF-8');
+
+        $overrideactivestr = get_string('overrideactive' . $data->importname, 'totara_completionimport');
+        $mform->addElement('advcheckbox', 'overrideactive' . $data->importname, $overrideactivestr);
 
         $this->add_action_buttons(false, get_string('upload'));
 

@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -124,7 +124,11 @@ class rb_source_cohort_associations_visible extends rb_base_source {
             'associations.audiencevisible',
             array(
                 'joins' => 'associations',
-                'displayfunc' => 'visibility_status'
+                'displayfunc' => 'visibility_status',
+                'extrafields' => array(
+                    'insid' => 'base.instanceid',
+                    'type' => 'base.instancetype'
+                )
             )
         );
         $columnoptions[] = new rb_column_option(
@@ -317,9 +321,34 @@ class rb_source_cohort_associations_visible extends rb_base_source {
      * @return string
      */
     public function rb_display_visibility_status($status, $row) {
-        global $COHORT_VISIBILITY;
+        global $CFG, $COHORT_VISIBILITY;
 
-        return $COHORT_VISIBILITY[$status];
+        if (empty($CFG->audiencevisibility)) {
+            return $COHORT_VISIBILITY[$status];
+        }
+
+        $type = $row->type;
+        if ($type == COHORT_ASSN_ITEMTYPE_COURSE) {
+            $hascapability = has_capability('moodle/course:update', context_course::instance($row->insid));
+        } else if ($type == COHORT_ASSN_ITEMTYPE_PROGRAM) {
+            $programcontext = context_program::instance($row->insid);
+            $hascapability = has_capability('totara/program:configureprogram', $programcontext) ||
+                has_capability('totara/program:configuredetails', $programcontext);
+        }
+
+        if (isset($hascapability) && $hascapability) { // Has capability to change the visibility of learning contents.
+            $output = html_writer::start_tag('form', array('id' => 'changevisibilityaudience' . $row->insid));
+            $output .= html_writer::empty_tag('input', array('type' => 'hidden', 'id' => 'type' . $row->insid, 'value' => $type));
+            $output .= html_writer::select($COHORT_VISIBILITY,
+                $row->insid,
+                $status,
+                false);
+            $output .= html_writer::end_tag('form');
+        } else {
+            $output = $COHORT_VISIBILITY[$status];
+        }
+
+        return $output;
     }
 
     /**
@@ -389,5 +418,19 @@ class rb_source_cohort_associations_visible extends rb_base_source {
         }
         return get_string('na', 'totara_cohort');
     }
-}
 
+    public function get_required_jss() {
+        global $COHORT_VISIBILITY;
+
+        $jsdetails = new stdClass();
+        $jsdetails->initcall = 'M.totara_cohortvisiblelearning.init';
+        $jsdetails->jsmodule = array(
+            'name' => 'totara_cohortvisiblelearning',
+            'fullpath' => '/totara/cohort/visiblelearning.js',
+            'requires' => array('json'));
+        $jsdetails->args = array('args' => '{"cohort_visibility":' . json_encode($COHORT_VISIBILITY) . '}');
+        $jsdetails->strings = array('error' => array('invalidentry'));
+
+        return array($jsdetails);
+    }
+}

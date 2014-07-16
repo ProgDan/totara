@@ -3,7 +3,7 @@
  * This file is part of Totara LMS
  *
  * Copyright (C) 2009 Catalyst IT LTD
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,38 +46,89 @@ $baseparams = array('cal_d' => $day, 'cal_m' => $month, 'cal_y' => $year);
 $sessionids = array(); // will get the list of sessions to display in the bottom box
 $events = array();
 
-// Grab filter parameters
-$activefilters = array();
-$customfields = facetoface_get_session_customfields();
-foreach ($customfields as $field) {
-    if (empty($field->isfilter)) {
-        continue;
-    }
+$activefilters = array('defaultfields' => array(), 'customfields' => array());
+$hasvalue = array_fill_keys(array('timestart', 'timefinish', 'room', 'building', 'address', 'capacity'), false);
+$defaultfields = array();
+$activecustomfields = array();
+$cfgcalendarfilters = false;
 
-    $fieldname = "field_{$field->shortname}";
-    $currentvalue = optional_param($fieldname, '', PARAM_TEXT);
-    if (!empty($currentvalue)) {
-        $activefilters[$field->id] = $currentvalue;
-    }
-}
-
-// Save/restore filters
-if (empty($activefilters)) {
-    // Nothing selected: restore last filter selection from the session
-    $usersetting = get_user_preferences('facetoface_calendarfilters');
-    if (!empty($usersetting)) {
-        if (!$activefilters = unserialize($usersetting)) {
-            $activefilters = array(); // broken serialized structure
+// Separate custom fields from default ones.
+if (!empty($CFG->facetoface_calendarfilters)) {
+    $allfields = explode(',', $CFG->facetoface_calendarfilters);
+    foreach ($allfields as $key) {
+        if (is_numeric($key)) {
+            $activecustomfields[] = $key;
+        } else {
+            $defaultfields[] = $key;
         }
     }
-}
-else {
-    // Save current filter selection in the session
-    unset_user_preference('facetoface_calendarfilters');
-    set_user_preference('facetoface_calendarfilters', serialize($activefilters));
+    $cfgcalendarfilters = true;
 }
 
-// Page header
+// Grab filter parameters (default and custom fields).
+foreach ($defaultfields as $fieldname) {
+    $currentvalue = optional_param($fieldname, '', PARAM_TEXT);
+    if (!empty($currentvalue)) {
+        $activefilters['defaultfields'][$fieldname] = $currentvalue;
+    }
+}
+
+$customfields = facetoface_get_session_customfields();
+foreach ($customfields as $field) {
+    if (in_array($field->id, $activecustomfields)) {
+        $fieldname = "field_{$field->shortname}";
+        $currentvalue = optional_param($fieldname, '', PARAM_TEXT);
+        if (!empty($currentvalue)) {
+            $activefilters['customfields'][$field->id] = $currentvalue;
+        }
+    } else {
+        unset($customfields[$field->id]);
+    }
+}
+
+// Save/restore filters (default and custom fields).
+if (empty($activefilters['defaultfields'])) {
+    // Make sure that filter values are emptied.
+    $issubmitted = optional_param('submit', '', PARAM_TEXT);
+    if (!empty($issubmitted)) {
+        $activefilters['defaultfields'] = array();
+        set_user_preference('facetoface_calendardefaultfilters', serialize($activefilters['defaultfields']));
+    } else {
+        // Nothing selected: restore last filter selection from the session.
+        $usersetting = get_user_preferences('facetoface_calendardefaultfilters');
+        if (!empty($usersetting)) {
+            if (!$activefilters['defaultfields'] = unserialize($usersetting)) {
+                $activefilters['defaultfields'] = array(); // Broken serialized structure.
+            }
+        }
+    }
+} else {
+    // Save current filter selection in the session.
+    unset_user_preference('facetoface_calendardefaultfilters');
+    set_user_preference('facetoface_calendardefaultfilters', serialize($activefilters['defaultfields']));
+}
+
+if (empty($activefilters['customfields'])) {
+    // Nothing selected: restore last filter selection from the session.
+    $usersetting = get_user_preferences('facetoface_calendarfilters');
+    if (!empty($usersetting)) {
+        if (!$activefilters['customfields'] = unserialize($usersetting)) {
+            $activefilters['customfields'] = array(); // Broken serialized structure.
+        }
+    }
+} else {
+    // Save current filter selection in the session.
+    unset_user_preference('facetoface_calendarfilters');
+    set_user_preference('facetoface_calendarfilters', serialize($activefilters['customfields']));
+}
+
+// Check if a custom field has been removed as a filter from facetoface settings. If so, the filter is removed from active filters.
+$arraydiff = array_diff_key($activefilters['customfields'], $customfields);
+foreach ($arraydiff as $key => $value) {
+    unset($activefilters['customfields'][$key]);
+}
+
+// Page header.
 $pagetitle = get_string('trainingcalendar', 'block_facetoface');
 $PAGE->navbar->add($pagetitle);
 $PAGE->set_title($pagetitle);
@@ -88,16 +139,27 @@ $PAGE->set_cacheable(true);
 $PAGE->set_pagelayout('standard');
 echo $OUTPUT->header();
 
-// Custom field filters
+// Javascript include (if needed).
+if (in_array('timestart', $defaultfields) || in_array('timefinish', $defaultfields)) {
+    local_js(array(TOTARA_JS_DATEPICKER));
+}
+
+// Default field filters.
 $tablecells = array();
+foreach ($defaultfields as $fieldname) {
+    $tablecells[] = defaultfield_chooser($fieldname);
+}
+
+// Custom field filters.
 foreach ($customfields as $field) {
     if ($html = customfield_chooser($field)) {
         $tablecells[] = $html;
     }
 }
+
 if (!empty($tablecells)) {
     $label = get_string('apply', 'block_facetoface');
-    $tablecells[] = html_writer::empty_tag('input', array('type' => 'submit', 'value' => $label));
+    $tablecells[] = html_writer::empty_tag('input', array('type' => 'submit', 'value' => $label, 'name' => 'submit'));
 
     $table = new html_table();
     $table->data[] = $tablecells;
@@ -115,8 +177,8 @@ if (!empty($tablecells)) {
     echo html_writer::end_tag('form');
 }
 
-// Important notices
-if ($notice = get_notice($activefilters)) {
+// Important notices.
+if ($notice = get_notice($activefilters['customfields'])) {
     echo $OUTPUT->box_start();
     echo format_text($notice, FORMAT_HTML);
     echo $OUTPUT->box_end();
@@ -218,23 +280,41 @@ function get_display_info($d, $m, $y) {
 
 
 function get_sessions($display, $groups, $users, $courses, $activefilters, &$events, &$sessionids) {
-    global $timenow;
+    global $cfgcalendarfilters;
 
-    // Get events from database
+    // Get events from database.
     $events = calendar_get_events(usertime($display->tstart), usertime($display->tend), $users, $groups, $courses);
     if (!empty($events)) {
+        // Check if any filters has been selected.
+        if ($cfgcalendarfilters) {
+            $defaultfieldsessionids = get_matches_defaultfields($events);
+            foreach ($defaultfieldsessionids as $defaultfield) {
+                $sessiondata['sessionids'][] = $defaultfield->sessionid;
+                $sessiondata['timestart'][] = (int)$defaultfield->timestart;
+                $sessiondata['timefinish'][] = (int)$defaultfield->timefinish;
+            }
+        }
         foreach ($events as $eventid => $event) {
             if (empty($event->modulename)) {
-                continue; // nothing to check
+                continue; // Nothing to check.
             }
 
-            // Check that facetoface events match all filters
+            // Check that facetoface events match all filters.
             $sessionid = (int)$event->uuid;
             if ('facetoface' == $event->modulename and $sessionid > 0) {
                 $matchesallfilters = true;
-                foreach ($activefilters as $fieldid => $fieldvalue) {
+
+                // Check if there are active filters and they are not empty.
+                if ($cfgcalendarfilters && count($activefilters['defaultfields'])) {
+                    if (!count($defaultfieldsessionids) || !matches_defaultfield_filters($sessiondata, $event)) {
+                        unset($events[$eventid]);
+                        continue;
+                    }
+                }
+
+                foreach ($activefilters['customfields'] as $fieldid => $fieldvalue) {
                     if (!matches_filter($fieldid, $fieldvalue, $sessionid)) {
-                        // Different value => no match
+                        // Different value => no match.
                         $matchesallfilters = false;
                         break;
                     }
@@ -245,17 +325,110 @@ function get_sessions($display, $groups, $users, $courses, $activefilters, &$eve
                 }
                 else {
                     unset($events[$eventid]);
-                    continue; // move to next event
+                    continue; // Move to next event.
                 }
             }
 
-            // Group checks
+            // Group checks.
             $cm = get_coursemodule_from_instance($event->modulename, $event->instance);
             if (!groups_course_module_visible($cm)) {
                 unset($events[$eventid]);
             }
         }
     }
+}
+
+/**
+ * Get all records that match the current criteria for default fields
+ *
+ * @param array $events facetoface events
+ *
+ * @return array with records that match the current filters, empty array if no matches
+ */
+function get_matches_defaultfields($events) {
+    global $DB, $activefilters, $hasvalue;
+
+    $eventids = array();
+    $fieldvalues = array();
+
+    // Get the values for any active filters that is not empty.
+    foreach ($activefilters['defaultfields'] as $fieldname => $value) {
+        if (trim($value) && ($value != get_string('datepickerlongyearplaceholder', 'totara_core'))) {
+            $fieldvalues[$fieldname] = $value;
+            $hasvalue[$fieldname] = true;
+        }
+    }
+
+    // Get all session ids.
+    foreach ($events as $event) {
+        $eventids[] = (int)$event->uuid;
+    }
+
+    if (count($eventids)) {
+        list($sessionids, $params) = $DB->get_in_or_equal($eventids);
+        $sql = "SELECT fsd.id AS sessiondateid, fsd.timestart, fsd.timefinish, fs.id AS sessionid
+                FROM {facetoface_sessions} fs
+                LEFT JOIN {facetoface_sessions_dates} fsd ON fs.id = fsd.sessionid
+                LEFT JOIN {facetoface_room} fr ON fs.roomid = fr.id
+                WHERE fs.id $sessionids ";
+
+        // Check that at least one filter is not empty.
+        if (count($fieldvalues)) {
+            // Add constrains to the query for those fields that are not empty.
+            if (array_key_exists('timestart', $fieldvalues)) {
+                $sql .= "AND fsd.timestart >= ? ";
+                $cleanedformatdate = str_replace('%', '', get_string('datepickerlongyearphpuserdate', 'totara_core'));
+                $fieldvalues['timestart'] = totara_date_parse_from_format($cleanedformatdate, $fieldvalues['timestart']);
+                $activefilters['defaultfields']['unixtimestart'] = $fieldvalues['timestart'];
+            }
+            if (array_key_exists('timefinish', $fieldvalues)) {
+                $sql .= "AND fsd.timefinish <= ? ";
+                $cleanedformatdate = str_replace('%', '', get_string('datepickerlongyearphpuserdate', 'totara_core'));
+                $fieldvalues['timefinish'] = totara_date_parse_from_format($cleanedformatdate, $fieldvalues['timefinish']);
+                $activefilters['defaultfields']['unixtimefinish'] = $fieldvalues['timefinish'];
+            }
+            if (array_key_exists('room', $fieldvalues)) {
+                $sql .= "AND fr.name = ? ";
+            }
+            if (array_key_exists('building', $fieldvalues)) {
+                $sql .= "AND fr.building = ? ";
+            }
+            if (array_key_exists('address', $fieldvalues)) {
+                $sql .= "AND fr.address = ? ";
+            }
+            if (array_key_exists('capacity', $fieldvalues)) {
+                $sql .= "AND fs.capacity = ?";
+            }
+
+            $params = array_merge($params, array_values($fieldvalues));
+        }
+
+        return $DB->get_records_sql($sql, $params);
+    }
+
+    return array();
+}
+
+/**
+ * Check if the current event matches the criteria
+ *
+ * @param array $sessiondata session information for all sessions which meet the current criteria
+ * @param object $event individual facetoface event
+ *
+ * @return boolean true if eventid matches any ids returned by get_matches_defaultfields function, false otherwise
+ */
+function matches_defaultfield_filters($sessiondata, $event) {
+    global $hasvalue;
+
+    if (!in_array((int)$event->uuid, $sessiondata['sessionids'])) {
+        return false;
+    } else if ($hasvalue['timestart'] && !in_array($event->timestart, $sessiondata['timestart'])) {
+        return false;
+    } else if ($hasvalue['timefinish'] && !in_array(($event->timestart + $event->timeduration), $sessiondata['timefinish'])) {
+        return false;
+    }
+
+    return true;
 }
 
 /*
@@ -438,32 +611,70 @@ function top_controls($month, $year) {
     return $content;
 }
 
+/**
+ * Render the default field filters that have been selected in Face-to-face settings
+ *
+ * @param string $fieldname name of the field
+ *
+ * @return string that contains the HTML for the field
+ */
+function defaultfield_chooser($fieldname) {
+    global $activefilters;
+
+    $value = isset($activefilters['defaultfields'][$fieldname]) ? $activefilters['defaultfields'][$fieldname] : '';
+    if (in_array($fieldname, array('timestart', 'timefinish')) && !$value) {
+        $value = get_string('datepickerlongyearplaceholder', 'totara_core');
+    }
+    switch($fieldname) {
+        case 'timestart':
+            $label = html_writer::empty_tag('input', array('type' => 'text', 'size' => 10, 'name' => $fieldname, 'id' => $fieldname, 'value' => $value));
+            build_datepicker_js("#$fieldname", get_string('datepickerlongyeardisplayformat', 'totara_core'));
+            $fieldname = 'startdateafter';
+            break;
+        case 'timefinish':
+            $label = html_writer::empty_tag('input', array('type' => 'text', 'size' => 10, 'name' => $fieldname, 'id' => $fieldname, 'value' => $value));
+            build_datepicker_js("#$fieldname", get_string('datepickerlongyeardisplayformat', 'totara_core'));
+            $fieldname = 'finishdatebefore';
+            break;
+        case 'room':
+            $label = html_writer::empty_tag('input', array('type' => 'text', 'size' => 10, 'name' => $fieldname, 'value' => $value));
+            break;
+        case 'building':
+            $label = html_writer::empty_tag('input', array('type' => 'text', 'size' => 10, 'name' => $fieldname, 'value' => $value));
+            break;
+        case 'address':
+            $label = html_writer::empty_tag('input', array('type' => 'text', 'size' => 10, 'name' => $fieldname, 'value' => $value));
+            break;
+        case 'capacity':
+            $label = html_writer::empty_tag('input', array('type' => 'text', 'size' => 1, 'name' => $fieldname, 'value' => $value));
+            break;
+    }
+
+    return get_string($fieldname, 'facetoface') . ': ' . $label;
+}
+
 function customfield_chooser($field) {
     global $activefilters, $DB;
 
-    if (empty($field->isfilter)) {
-        return false; // not a filter
-    }
-
     $values = array();
     switch ($field->type) {
-    case CUSTOMFIELD_TYPE_TEXT:
-        $records = $DB->get_records('facetoface_session_data', array('fieldid' => $field->id), 'data', 'id, data');
-        foreach ($records as $record) {
-            $values[$record->data] = $record->data;
-        }
-        break;
+        case CUSTOMFIELD_TYPE_TEXT:
+            $records = $DB->get_records('facetoface_session_data', array('fieldid' => $field->id), 'data', 'id, data');
+            foreach ($records as $record) {
+                $values[$record->data] = $record->data;
+            }
+            break;
 
-    case CUSTOMFIELD_TYPE_SELECT:
-    case CUSTOMFIELD_TYPE_MULTISELECT:
-        $values = explode(CUSTOMFIELD_DELIMITER, $field->possiblevalues);
-        break;
+        case CUSTOMFIELD_TYPE_SELECT:
+        case CUSTOMFIELD_TYPE_MULTISELECT:
+            $values = explode(CUSTOMFIELD_DELIMITER, $field->possiblevalues);
+            break;
 
-    default:
-        return false; // invalid type
+        default:
+            return false; // Invalid type.
     }
 
-    // Build up dropdown list of values
+    // Build up dropdown list of values.
     $options = array();
     if (!empty($values)) {
         foreach ($values as $value) {
@@ -479,8 +690,8 @@ function customfield_chooser($field) {
 
     $fieldname = "field_$field->shortname";
     $currentvalue = $nothingvalue;
-    if (!empty($activefilters[$field->id])) {
-        $currentvalue = $activefilters[$field->id];
+    if (!empty($activefilters['customfields'][$field->id])) {
+        $currentvalue = $activefilters['customfields'][$field->id];
     }
 
     $dropdown = html_writer::select($options, $fieldname, $currentvalue, array($nothingvalue => $nothing));
@@ -520,14 +731,15 @@ function matches_filter($filterid, $filtervalue, $sessionid)
 }
 
 function get_sessions_by_date($sessionids, $displayinfo) {
-    global $CFG, $DB;
+    global $DB, $activefilters, $hasvalue;
 
     if (empty($sessionids)) {
         return array();
     }
 
-    $timestart = usertime($displayinfo->tstart);
-    $timeend = usertime($displayinfo->tend);
+    // If timestart/timefinish has a date, it uses that date. It uses the current month otherwise.
+    $timestart = $hasvalue['timestart'] ? $activefilters['defaultfields']['unixtimestart'] : usertime($displayinfo->tstart);
+    $timeend = $hasvalue['timefinish'] ? $activefilters['defaultfields']['unixtimefinish'] : usertime($displayinfo->tend);
 
     list($insql, $params) = $DB->get_in_or_equal($sessionids);
     $params[] = $timestart;
@@ -545,20 +757,25 @@ function get_sessions_by_date($sessionids, $displayinfo) {
 
 // Same as previous function by sorted by activity name and including waitlisted sessions
 function get_sessions_by_course($sessionids, $displayinfo, $waitlistedsessions) {
-    global $CFG, $DB;
+    global $DB, $activefilters, $hasvalue;
 
-    if (empty($sessionids)) {
+    if (empty($sessionids) && empty($waitlistedsessions)) {
         return array();
     }
 
-    // Add IDs of wait-listed sessions
+    // Add IDs of wait-listed sessions.
     foreach ($waitlistedsessions as $session) {
-        $sessionids[] = $session->id;
+        // If no date has been selected then add the sessionid.
+        if (!$hasvalue['timestart'] && !$hasvalue['timefinish']) {
+            $sessionids[] = $session->id;
+        }
     }
 
     list($insql, $params) = $DB->get_in_or_equal($sessionids);
-    $timestart = usertime($displayinfo->tstart);
-    $timeend = usertime($displayinfo->tend);
+
+    // If timestart/timefinish has a date, it uses that date. It uses the current month otherwise.
+    $timestart = $hasvalue['timestart'] ? $activefilters['defaultfields']['unixtimestart'] : usertime($displayinfo->tstart);
+    $timeend = $hasvalue['timefinish'] ? $activefilters['defaultfields']['unixtimefinish'] : usertime($displayinfo->tend);
     $params[] = $timestart;
     $params[] = $timeend;
 
@@ -749,17 +966,16 @@ function get_notice($activefilters) {
 }
 
 function get_matching_waitlisted_sessions($activefilters) {
-    global $CFG, $DB;
-    global $customfields;
+    global $DB, $customfields, $hasvalue;
 
     $filterjoins = '';
     $filterwhere = 'AND f.showoncalendar > ?';
     $filterparams = array(F2F_CAL_NONE);
 
     $filternb = 1;
-    foreach ($activefilters as $fieldid => $fieldvalue) {
+    foreach ($activefilters['customfields'] as $fieldid => $fieldvalue) {
         if ('all' == $fieldvalue) {
-            continue; // Not actually a filter
+            continue; // Not actually a filter.
         }
 
         $joincondition = "d1.sessionid = s.id";
@@ -779,13 +995,26 @@ function get_matching_waitlisted_sessions($activefilters) {
         $filternb++;
     }
 
-    // Get all waitlisted sessions
+    // If capacity is not empty then add it as a condition.
+    if ($hasvalue['capacity']) {
+        $filterwhere .= " AND s.capacity = ?";
+        $filterparams = array_merge($filterparams, array($activefilters['defaultfields']['capacity']));
+    }
+
+    // Get all waitlisted sessions.
     $sessions = $DB->get_records_sql("SELECT s.id, s.facetoface, f.name
                                       FROM {facetoface} f
                                       JOIN {facetoface_sessions} s ON f.id = s.facetoface
                                       $filterjoins
                                       WHERE s.datetimeknown = 0
                                       $filterwhere", $filterparams);
+
+    foreach ($sessions as $session) {
+        // If date or room information is not empty then remove the session.
+        if ($hasvalue['timestart'] || $hasvalue['timefinish'] || $hasvalue['room'] || $hasvalue['building'] || $hasvalue['address']) {
+            unset($sessions[$session->id]);
+        }
+    }
 
     return $sessions;
 }
@@ -843,7 +1072,8 @@ function print_tooltips($sessions) {
         if ($currentday < $day) {
             if ($currentday > 0) {
                 $html = tooltip_contents($sessionlist);
-                $jstooltip .= " Y.one('#cell$currentday').setAttribute('tooltip', '$html').setAttribute('tooltip:alignment', 'bottom');\n";
+                $jstooltip .= " if (Y.one('#cell$currentday')) {
+                                    Y.one('#cell$currentday').setAttribute('tooltip', '$html').setAttribute('tooltip:alignment', 'bottom'); }\n";
             }
 
             $sessionlist = array();
@@ -854,7 +1084,8 @@ function print_tooltips($sessions) {
 
     // Print last tooltip.
     $html = tooltip_contents($sessionlist);
-    $jstooltip .= " Y.one('#cell$currentday').setAttribute('tooltip', '$html').setAttribute('tooltip:alignment', 'bottom');\n";
+    $jstooltip .= " if (Y.one('#cell$currentday')) {
+                        Y.one('#cell$currentday').setAttribute('tooltip', '$html').setAttribute('tooltip:alignment', 'bottom'); }\n";
 
     $js = "Y.use('gallery-yui-tooltip', 'node', function(Y) { $jstooltip var t = new Y.Tooltip().render(); }); \n";
     echo html_writer::script($js);

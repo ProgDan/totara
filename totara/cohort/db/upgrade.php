@@ -1,9 +1,8 @@
 <?php
-
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -480,13 +479,15 @@ function xmldb_totara_cohort_upgrade($oldversion) {
         $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, null, null, null, null);
         $table->add_field('planstatus', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, null);
         $table->add_field('affectedusers', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, null);
-        $table->add_field('manual', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, null, null);
-        $table->add_field('auto', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, null, null);
+        $table->add_field('manual', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', null);
+        $table->add_field('auto', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', null);
         $table->add_field('completed', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, null, null);
 
         $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
         $table->add_key('cohortid', XMLDB_KEY_FOREIGN, array('cohortid'), 'cohort', array('id'));
         $table->add_key('templateid', XMLDB_KEY_FOREIGN, array('templateid'), 'db_template', array('id'));
+
+        $table->setComment('A table to store the history of plans created for cohorts.');
 
         if (!$dbman->table_exists($table)) {
             $dbman->create_table($table);

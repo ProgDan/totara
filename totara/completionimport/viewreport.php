@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,12 +81,12 @@ echo $renderer->print_description($report->description, $report->_id);
 
 $report->display_search();
 
-if ($countfiltered > 0) {
-    echo $renderer->showhide_button($report->_id, $report->shortname);
-    $report->display_table();
-    // Export button.
-    $renderer->export_select($report->_id, $sid);
-}
+echo $renderer->showhide_button($report->_id, $report->shortname);
+
+$report->display_table();
+
+// Export button.
+$renderer->export_select($report->_id, $sid);
 
 echo $OUTPUT->container_end();
 

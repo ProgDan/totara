@@ -778,6 +778,38 @@ function calendar_get_events($tstart, $tend, $users, $groups, $courses, $withdur
     if ($events === false) {
         $events = array();
     }
+
+    // Check the visibility of site wide events, T-11534.
+    $events = calendar_events_check_visibility($events);
+
+    return $events;
+}
+
+/**
+ * Totara function added to handle visibility of activities sitewide calendar entries
+ * See T-11534 for more details.
+ *
+ * @param array $events     An array of DB records from the table 'events'
+ */
+function calendar_events_check_visibility($events) {
+    global $DB, $CFG;
+
+    require_once($CFG->dirroot . '/totara/coursecatalog/lib.php');
+
+    foreach ($events as $key => $event) {
+        // Checking the module this way in case we need to add more later.
+        $checkmods = array('facetoface');
+        if ($event->courseid == SITEID && $event->userid == 0 && in_array($event->modulename, $checkmods)) {
+            // Get the course id from the activity.
+            $courseid = $DB->get_field($event->modulename, 'course', array('id' => $event->instance));
+
+            // Check the course is visible for the user.
+            if (!totara_course_is_viewable($courseid)) {
+                unset($events[$key]);
+            }
+        }
+    }
+
     return $events;
 }
 
@@ -1618,6 +1650,24 @@ function calendar_preferences_button(stdClass $course) {
  * @return string $eventtime link/string for event time
  */
 function calendar_format_event_time($event, $now, $linkparams = null, $usecommonwords = true, $showtime=0) {
+    global $CFG, $DB;
+    require_once($CFG->dirroot . '/mod/facetoface/lib.php');
+    // Display timezone information for F2F sessions.
+    if ($event->modulename == 'facetoface' && $event->eventtype == 'facetofacesession') {
+        $sql = "SELECT fsd.id, fsd.sessiontimezone
+                  FROM {facetoface_sessions_dates} fsd
+            INNER JOIN {facetoface_sessions} fs
+                    ON fsd.sessionid = fs.id
+                   AND fs.facetoface = ?
+                 WHERE fsd.timestart = ?";
+        if ($sessiondata = $DB->get_record_sql($sql, array($event->instance, $event->timestart))) {
+            $sessionobj = facetoface_format_session_times($event->timestart,
+                                                          $event->timestart + $event->timeduration,
+                                                          $sessiondata->sessiontimezone);
+            return get_string('sessionstartdateandtime', 'facetoface', $sessionobj);
+        }
+    }
+
     $startdate = usergetdate($event->timestart);
     $enddate = usergetdate($event->timestart + $event->timeduration);
     $usermidnightstart = usergetmidnight($event->timestart);

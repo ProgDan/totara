@@ -1401,6 +1401,7 @@ class restore_course_structure_step extends restore_structure_step {
         }
         if (empty($CFG->enablecompletion)) {
             $data->enablecompletion = 0;
+            $data->completionstartonenrol = 0;
             $data->completionprogressonview = 0;
             $data->completionnotify = 0;
         }
@@ -2204,9 +2205,15 @@ class restore_calendarevents_structure_step extends restore_structure_step {
         } else {
             $params['instance'] = 0;
         }
-        $sql = 'SELECT id FROM {event} WHERE ' . $DB->sql_compare_text('name', 255) . ' = ' . $DB->sql_compare_text('?', 255) . ' AND courseid = ? AND
-                repeatid = ? AND modulename = ? AND timestart = ? AND timeduration =?
-                AND ' . $DB->sql_compare_text('description', 255) . ' = ' . $DB->sql_compare_text('?', 255);
+        $sql = "SELECT id
+                  FROM {event}
+                 WHERE " . $DB->sql_compare_text('name', 255) . " = " . $DB->sql_compare_text('?', 255) . "
+                   AND courseid = ?
+                   AND repeatid = ?
+                   AND modulename = ?
+                   AND timestart = ?
+                   AND timeduration = ?
+                   AND " . $DB->sql_compare_text('description', 255) . " = " . $DB->sql_compare_text('?', 255);
         $arg = array ($params['name'], $params['courseid'], $params['repeatid'], $params['modulename'], $params['timestart'], $params['timeduration'], $params['description']);
         $result = $DB->record_exists_sql($sql, $arg);
         if (empty($result)) {
@@ -2401,6 +2408,8 @@ class restore_course_completion_structure_step extends restore_structure_step {
         $data->course = $this->get_courseid();
         $data->userid = $this->get_mappingid('user', $data->userid);
 
+        // If course is set to start completion on enrol, then users may be already enrolled and completion records may exist already at this point.
+        $startonenrol = $DB->get_field('course', 'completionstartonenrol', array('id' => $data->course));
         if (!empty($data->userid)) {
             $params = array(
                 'userid' => $data->userid,
@@ -2410,7 +2419,15 @@ class restore_course_completion_structure_step extends restore_structure_step {
                 'timecompleted' => $this->apply_date_offset($data->timecompleted),
                 'reaggregate' => $data->reaggregate
             );
-            $DB->insert_record('course_completions', $params);
+            // Check if completion records actually exist (course_completions has unique index on userid|course).
+            if ($startonenrol && ($ccid = $DB->get_field('course_completions', 'id', array('userid' => $params['userid'], 'course' => $params['course'])))) {
+                // We can add the returned course_completions record id to the array and update the db.
+                $params['id'] = $ccid;
+                $DB->update_record('course_completions', $params);
+            } else {
+                // Insert new completion record.
+                $DB->insert_record('course_completions', $params);
+            }
         }
     }
 

@@ -1,6 +1,8 @@
 <?php
 /*
- * Copyright (C) 2012 - 2013 Totara Learning Solutions LTD
+ * This file is part of Totara LMS
+ *
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,5 +66,8 @@ function xmldb_facetoface_install() {
     $tpl_decline->body = text_to_html(get_string('setting:defaultdeclinemessagedefault', 'facetoface'));
     $tpl_decline->managerprefix = text_to_html(get_string('setting:defaultdeclineinstrmngrdefault', 'facetoface'));
     $DB->insert_record('facetoface_notification_tpl', $tpl_decline);
+
+    // Setting room, building, and address as default filters.
+    set_config('facetoface_calendarfilters', 'room,building,address');
 }
 ?>

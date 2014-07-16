@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ if (!defined('MOODLE_INTERNAL')) {
 }
 
 require_once($CFG->dirroot . '/totara/certification/lib.php');
+require_once($CFG->dirroot . '/totara/coursecatalog/lib.php');
 
 define('COMPLETIONTYPE_ALL', 1);
 define('COMPLETIONTYPE_ANY', 2);
@@ -390,6 +391,7 @@ abstract class course_set {
         }
 
         // If this divider is inside an OR group
+        $separator = ' ' . get_string('or', 'totara_program') . ' ';
         if ($previous_sets[count($previous_sets)-1]->nextsetoperator == NEXTSETOPERATOR_OR) {
             $sets = array();
 
@@ -414,12 +416,12 @@ abstract class course_set {
                 if (!$user = $DB->get_record('user', array('id' => $userid))) {
                     print_error('error:invaliduser', 'totara_program');
                 }
-                $out .= fullname($user) . ' ' . get_string('youmustcompleteormanager', 'totara_program', implode(' or ', $sets));
+                $out .= fullname($user) . ' ' . get_string('youmustcompleteormanager', 'totara_program', implode($separator, $sets));
             } else {
                 if ($userid) {
-                    $out .= get_string('youmustcompleteorlearner', 'totara_program', implode(' or ', $sets));
+                    $out .= get_string('youmustcompleteorlearner', 'totara_program', implode($separator, $sets));
                 } else {
-                    $out .= get_string('youmustcompleteorviewing', 'totara_program', implode(' or ', $sets));
+                    $out .= get_string('youmustcompleteorviewing', 'totara_program', implode($separator, $sets));
                 }
             }
         } else {
@@ -435,7 +437,7 @@ abstract class course_set {
                     $sets[] = $this->get_course_text($previous_sets[$i]);
                 }
                 $sets = array_reverse($sets);
-                $a->mustcomplete = implode(' or ', $sets);
+                $a->mustcomplete = implode($separator, $sets);
             } else {
                 $a->mustcomplete = $this->get_course_text($previous_sets[count($previous_sets)-1]);
             }
@@ -450,7 +452,7 @@ abstract class course_set {
                         break;
                     }
                 }
-                $a->proceedto = implode(' or ', $sets);
+                $a->proceedto = implode($separator, $sets);
             } else if (isset($next_sets[0])) {
                 $a->proceedto = $this->get_course_text($next_sets[0]);
             }
@@ -697,11 +699,12 @@ class multi_course_set extends course_set {
      * @return int|bool
      */
     public function check_courseset_complete($userid) {
+        global $DB;
 
         $courses = $this->courses;
         $completiontype = $this->completiontype;
 
-        // check that the course set contains at least one course
+        // Check that the course set contains at least one course.
         if (!count($courses)) {
             return false;
         }
@@ -713,28 +716,46 @@ class multi_course_set extends course_set {
             // create a new completion object for this course
             $completion_info = new completion_info($course);
 
+            $params = array('userid' => $userid, 'course' => $course->id);
+            $completion_completion = new completion_completion($params);
+
             // check if the course is complete
-            if ($completion_info->is_course_complete($userid)) {
+            if ($completion_completion->is_complete()) {
                 if ($completiontype == COMPLETIONTYPE_ANY) {
                     $completionsettings = array(
                         'status'        => STATUS_COURSESET_COMPLETE,
-                        'timecompleted' => time()
+                        'timecompleted' => $completion_completion->timecompleted
                     );
                     return $this->update_courseset_complete($userid, $completionsettings);
                 }
             } else {
-                // if all courses must be completed for this ourse set to be complete
+                // If all courses must be completed for this course set to be complete.
                 if ($completiontype == COMPLETIONTYPE_ALL) {
                     return false;
                 }
             }
         }
 
-        // if processing reaches here and all courses in this set must be comleted then the course set is complete
+        // If processing reaches here and all courses in this set must be completed then
+        // the course set is complete.
         if ($completiontype == COMPLETIONTYPE_ALL) {
+            // Get the last course completed so we can use that timestamp for the courseset.
+            $courseids = array();
+            foreach ($courses as $course) {
+                $courseids[] = $course->id;
+            }
+
+            list($incourse, $params) = $DB->get_in_or_equal($courseids);
+            $sql = "SELECT MAX(timecompleted) AS timecompleted
+                FROM {course_completions}
+                WHERE course $incourse
+                AND userid = ?";
+            $params[] = $userid;
+            $completion = $DB->get_record_sql($sql, $params);
+
             $completionsettings = array(
                 'status'        => STATUS_COURSESET_COMPLETE,
-                'timecompleted' => time()
+                'timecompleted' => $completion->timecompleted
             );
             return $this->update_courseset_complete($userid, $completionsettings);
         }
@@ -743,9 +764,7 @@ class multi_course_set extends course_set {
     }
 
     public function display($userid=null, $previous_sets=array(), $next_sets=array(), $accessible=true, $viewinganothersprogram=false) {
-        global $USER, $OUTPUT, $DB, $CFG;
-
-        require_once($CFG->dirroot . '/totara/coursecatalog/lib.php');
+        global $USER, $OUTPUT, $DB;
 
         if ($userid) {
             $usercontext = context_user::instance($userid);
@@ -1541,9 +1560,7 @@ class competency_course_set extends course_set {
     }
 
     public function display($userid=null,$previous_sets=array(),$next_sets=array(),$accessible=true, $viewinganothersprogram=false) {
-        global $OUTPUT, $DB, $CFG;
-
-        require_once($CFG->dirroot . '/totara/coursecatalog/lib.php');
+        global $OUTPUT, $DB;
 
         $out = '';
         $out .= html_writer::start_tag('fieldset', array('class' => 'surround display-program'));

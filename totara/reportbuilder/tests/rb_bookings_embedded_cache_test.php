@@ -2,11 +2,11 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -180,15 +180,16 @@ class rb_bookings_embedded_cache_test extends reportcache_advanced_testcase {
         if ($usecache) {
             $this->enable_caching($this->report_builder_data['id']);
         }
+        $courseidalias = reportbuilder_get_extrafield_alias('course', 'courselink', 'course_id');
         $result = $this->get_report_result($this->report_builder_data['shortname'], array('userid' => $this->user1->id), $usecache);
         $this->assertCount(2, $result);
         foreach ($result as $r) {
-            $this->assertEquals($this->course1->id, $r->course_id);
+            $this->assertEquals($this->course1->id, $r->$courseidalias);
         }
         $result = $this->get_report_result($this->report_builder_data['shortname'], array('userid' => $this->user2->id), $usecache);
         $this->assertCount(1, $result);
         foreach ($result as $r) {
-            $this->assertEquals($this->course1->id, $r->course_id);
+            $this->assertEquals($this->course1->id, $r->$courseidalias);
         }
         $result = $this->get_report_result($this->report_builder_data['shortname'], array('userid' => $this->user4->id), $usecache);
         $this->assertCount(0, $result);

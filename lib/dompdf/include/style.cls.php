@@ -1415,7 +1415,7 @@ class Style {
 
     //see __set and __get, on all assignments clear cache, not needed on direct set through __set
     $this->_prop_cache["color"] = null;
-    $this->_props["color"] = $col["hex"];
+    $this->_props["color"] = isset($col["hex"]) ? $col["hex"] : 0;
   }
 
   /**
@@ -1431,7 +1431,7 @@ class Style {
 
     //see __set and __get, on all assignments clear cache, not needed on direct set through __set
     $this->_prop_cache["background_color"] = null;
-    $this->_props["background_color"] = is_array($col) ? $col["hex"] : $col;
+    $this->_props["background_color"] = is_array($col) ? $col["hex"] : 0;
   }
 
   /**

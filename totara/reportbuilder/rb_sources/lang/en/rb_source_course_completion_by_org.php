@@ -1,9 +1,32 @@
 <?php
+/*
+ * This file is part of Totara LMS
+ *
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @package totara
+ * @subpackage reportbuilder
+ */
+
 // lang string for totara/reportbuilder/rb_sources/rb_source_course_completion_by_org.php
 $string['sourcetitle'] = 'Course Completion by Organisation';
 // columns
 $string['completionorgid'] = 'Completion Organisation ID';
-$string['completionorgpath'] = 'Completion Organisation Path';
+$string['completionorgpath'] = 'Completion Organisation Path (IDs)';
+$string['completionorgpathtext'] = 'Completion Organisation Path (Text)';
 $string['completionorgname'] = 'Completion Organisation Name';
 $string['participants'] = 'All Participants';
 $string['numofrecords'] = 'Number of Records';

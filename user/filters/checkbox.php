@@ -76,7 +76,7 @@ class user_filter_checkbox extends user_filter_type {
         $objs = array();
 
         $objs[] = $mform->createElement('checkbox', $this->_name, null, '');
-        $grp = $mform->addElement('group', $this->_name.'_grp', $this->_label, $objs, '', false);
+        $grp = $mform->addElement('group', $this->_name.'_grp', format_string($this->_label), $objs, '', false);
 
         if ($this->_advanced) {
             $mform->setAdvanced($this->_name.'_grp');

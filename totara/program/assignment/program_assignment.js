@@ -1,7 +1,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -159,6 +159,8 @@ M.totara_programassignment = M.totara_programassignment || {
                 $('#timeamount', this._container).val(parts[0]);
                 $('#timeperiod', this._container).val(parts[1]);
                 $('#eventtype', this._container).val(completionevent);
+                $('#instance').val(completioninstance);
+                $('#instancetitle').text(this._dialog.item.completioneventname);
             }
             // rebind placeholder for date picker
             $('input[placeholder], textarea[placeholder]').placeholder();
@@ -219,11 +221,11 @@ M.totara_programassignment = M.totara_programassignment || {
                 var completiontime = timeunit + " " + timeperiod;
 
                 var completionevent = $('#eventtype option:selected', self.handler._container).val();
-                var completioninstance = $('#instance', self.handler._container).val();
+                var completioninstance = $('#instance', self.handler._container).val() ? $('#instance', self.handler._container).val() : self.item.completioninstance.val();
                 var unitformat = /^\d{1,3}$/;
                 if (unitformat.test(timeunit) === false) {
                     alert(M.util.get_string('pleaseentervalidunit', 'totara_program'));
-                } else if (completioninstance == '' && completionevent != module.config.COMPLETION_EVENT_FIRST_LOGIN) {
+                } else if (completioninstance == 0 && completionevent != module.config.COMPLETION_EVENT_FIRST_LOGIN) {
                     alert(M.util.get_string('pleasepickaninstance', 'totara_program'));
                 } else {
                     self.item.update_completiontime(completiontime, completionevent, completioninstance);
@@ -317,11 +319,10 @@ M.totara_programassignment = M.totara_programassignment || {
                 $('#instancetitle').text('');
             }
 
-            this.set_to_none = function() {
+            $(document).on('change', '#eventtype', function() {
                 $('#instance').val(0);
                 $('#instancetitle').text(M.util.get_string('none', 'moodle'));
-            }
-
+            });
         };
 
 
@@ -949,9 +950,25 @@ function item(category, element, isexistingitem) {
         self.update_completiontime(M.totara_programassignment.config.COMPLETION_TIME_NOT_SET, 0, 0);
     });
 
+    // Set the current completion name (contained between the single quotes).
+    this.get_completioneventname = function(completioneventname) {
+        this.completioneventname = completioneventname;
+    }
 
-    // Add handler to add completion dates
+    // Add handler to add completion dates.
     this.element.on('click', '.completionlink', function(event){
+        var i, completioneventname = '';
+        var completionname = $(this).text(); // Get the completion name currently selected.
+
+        // Check if the completion name contains single quotes.
+        if (completionname.indexOf("'") != -1) {
+            // Get the name contained between the single quotes.
+            completionname = completionname.substring(completionname.indexOf("'"))
+            for (i=1; i<completionname.length-1; i++) {
+                completioneventname = completioneventname + completionname[i];
+            }
+        }
+        self.get_completioneventname(completioneventname);
         event.preventDefault();
         totaraDialogs['completion'].item = self;
         totaraDialogs['completion'].default_url = self.category.url + 'set_completion.php';

@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * @author Ciaran Irvine <ciaran.irvine@totaralms.com>
  * @author David Curry <david.curry@totaralms.com>
  * @package totara
- * @subpackage totara_core
+ * @subpackage totara_hierarchy
  */
 
 if (!defined('MOODLE_INTERNAL')) {
@@ -288,15 +288,19 @@ class totara_hierarchy_renderer extends plugin_renderer_base {
      * @param object $item          The goal object to show the assignments for
      * @param bool $can_edit        Whether or not the viewing user can delete/add assignments
      * @param array $assignments    A list of current assignments for the goal
+     * @param bool $dialog_box      Is the function called from ajx/dialog or when the page is loaded
      * @return string HTML to output
      */
-    public function print_goal_view_assignments($item, $can_edit = false, $assignments = null) {
+    public function print_goal_view_assignments($item, $can_edit = false, $assignments = null, $dialog_box = false) {
         global $DB, $CFG;
 
         require_once($CFG->dirroot . '/totara/hierarchy/prefix/goal/lib.php');
 
         // Display table heading.
-        $heading = $this->output->heading(get_string('goalassignments', 'totara_hierarchy'), 3);
+        $heading = '';
+        if (!$dialog_box) {
+            $heading = $this->output->heading(get_string('goalassignments', 'totara_hierarchy'), 3);
+        }
 
         // Initialise table and add header row.
         $table = new html_table();

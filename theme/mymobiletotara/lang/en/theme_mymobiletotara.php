@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  * Copyright (C) 1999 onwards Martin Dougiamas
  *
  * This program is free software; you can redistribute it and/or modify
@@ -23,9 +23,6 @@
  * @author Russell England <russell.england@totaralms.com>
  * @package theme
  * @subpackage mymobiletotara
- *
- * @copyright Totara Learning Solutions Ltd
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 $string['choosereadme'] = '<div class="clearfix"><div class="theme_screenshot"><h2>MyMobile Totara</h2><img src="mymobiletotara/pix/screenshot.png" /><h2>About</h2><p>MyMobile Totara is a mobile theme for Moodle 2.x. More information on modifying themes can be found in the <a href="http://docs.moodle.org/en/Theme">MoodleDocs</a>.</p></div></div>';

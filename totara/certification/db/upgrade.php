@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,5 +37,20 @@ require_once($CFG->dirroot.'/totara/core/db/utils.php');
 function xmldb_totara_certification_upgrade($oldversion) {
     global $CFG, $DB, $OUTPUT;
 
+    $dbman = $DB->get_manager();
+
+    if ($oldversion < 2013111200) {
+        // Define field unassigned to be added to certif_completion_history.
+        $table = new xmldb_table('certif_completion_history');
+        $field = new xmldb_field('unassigned', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'timemodified');
+
+        // Conditionally launch add field unassigned.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Certification savepoint reached.
+        totara_upgrade_mod_savepoint(true, 2013111200, 'totara_certification');
+    }
     return true;
 }

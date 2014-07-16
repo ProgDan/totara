@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ class rb_filter_number extends rb_filter_type {
      */
     function setupForm(&$mform) {
         global $SESSION;
-        $label = $this->label;
+        $label = format_string($this->label);
         $advanced = $this->advanced;
 
         $objs = array();

@@ -139,6 +139,30 @@ td,
     background-color:#FFFFFF;
     border-color:#EEEEEE;
 }
+table.generaltable tbody>tr.r0>td,
+table.flexible tbody>tr.r0>td,
+table.generaltable tbody>tr.r0>th,
+table.flexible tbody>tr.r0>th {
+    background-color: #ffffff;
+}
+.generaltable .r1 td,
+.flexible .r1 td,
+.generaltable .r1 th,
+.flexible .r1 th {
+    background-color: #f9f9f9;
+}
+
+table.generaltable tbody>tr.r0:hover > td,
+table.flexible tbody>tr.r0:hover > td,
+table.generaltable tbody>tr.r0:hover > th,
+table.flexible tbody>tr.r0:hover > th,
+table.generaltable tbody>tr.r1:hover > td,
+table.flexible tbody>tr.r1:hover > td,
+table.generaltable tbody>tr.r1:hover > th,
+table.flexible tbody>tr.r1:hover > th {
+    background-color: #f5f5f5;
+}
+
 table.invisible th.header {
     background: none;
     padding: 0;
@@ -147,6 +171,7 @@ table.invisible td {
     padding: 0;
 }
 table.invisible {
+    visibility: visible;
     padding: 0;
     margin: 0;
 }
@@ -251,6 +276,9 @@ h2.headingblock {
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
     background-color: #DFF0D8;
     border-color: #C2D6B2;
+}
+#notice {
+    min-width: 0;
 }
 .notice,
 .notifynotice {
@@ -485,6 +513,9 @@ input[type="checkbox"] {
     padding:10px 0 10px;
     border:none;
 }
+.mform fieldset.collapsible legend a.fheader {
+    margin-left: 0;
+}
 .mform fieldset legend {
     width:100%;
     color:#333333;
@@ -561,6 +592,17 @@ input[type="checkbox"] {
     .visibleto {
         position: static;
         display: block;
+    }
+
+    /* this definition is required to fix the menu expand and collapse on the iPhone
+     * have upstreamed this (MDL-43989)
+     */
+    .nav-collapse.collapse.active {
+        display: block;
+    }
+    .nav-collapse.collapse {
+        height: auto;
+        display: none;
     }
 }
 /**
@@ -644,7 +686,7 @@ input[type="checkbox"] {
 }
 .tabtree .tabrow0 li.here a {
     position: relative;
-    z-index: 102;
+    z-index: 1;
 }
 .dir-rtl .tabtree .tabrow0 li a {
     margin-left: 3px;

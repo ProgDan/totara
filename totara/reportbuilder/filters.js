@@ -1,7 +1,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -290,7 +290,7 @@ M.totara_reportbuilderfilters = M.totara_reportbuilderfilters || {
                             $('.new_filter_selector').append(optgroup);
                         }
                         if (optgroup.find('option[value='+o.type+'-'+o.value+']').length == 0) {
-                            optgroup.append('<option value="'+o.type+'-'+o.value+'">'+rb_filter_headings[o.type+'-'+o.value]+'</option>');
+                            optgroup.append('<option value="'+o.type+'-'+o.value+'">'+o.filtername+'</option>');
                         }
 
                         module.rb_init_filter_rows();

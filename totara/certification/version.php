@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version  = 2013103000;       // The current module version (Date: YYYYMMDDXX).
+$plugin->version  = 2013111200;       // The current module version (Date: YYYYMMDDXX).
 $plugin->requires = 2012120304;       // Requires this Moodle version.
 $plugin->cron = 0;                    // Period for cron to check this module (secs).
 $plugin->component = 'totara_certification'; // To check on upgrade, that module sits in correct place.

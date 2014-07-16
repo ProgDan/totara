@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -325,6 +325,10 @@ class totara_sync_source_user_csv extends totara_sync_source_user {
                 $dbrow['deleted'] = empty($dbrow['deleted']) ? 0 : 1;
             }
 
+            if (isset($dbrow['suspended'])) {
+                $dbrow['suspended'] = empty($dbrow['suspended']) ? 0 : 1;
+            }
+
             if (isset($dbrow['timezone'])) {
                 // Clean deprecated timezones if possible
                 $timezone = $dbrow['timezone'];
@@ -341,20 +345,21 @@ class totara_sync_source_user_csv extends totara_sync_source_user {
                     if (!empty($this->config->{'import_'.$cf})) {
                         // Get shortname and check if we need to do field type processing
                         $value = trim($csvrow[$cf]);
-                        if (!empty($value)) {
-                            $shortname = str_replace("customfield_", "", $cf);
-                            $datatype = $DB->get_field('user_info_field', 'datatype', array('shortname' => $shortname));
-                            switch ($datatype) {
-                                case 'datetime':
-                                    // Try to parse the contents - if parse fails assume a unix timestamp and leave unchanged
-                                    $parsed_date = totara_date_parse_from_format($csvdateformat, $value);
-                                    if ($parsed_date) {
-                                        $value = $parsed_date;
-                                    }
-                                    break;
-                                default:
-                                    break;
-                            }
+                        $shortname = str_replace("customfield_", "", $cf);
+                        $datatype = $DB->get_field('user_info_field', 'datatype', array('shortname' => $shortname));
+                        switch ($datatype) {
+                            case 'datetime':
+                                // Try to parse the contents - if parse fails assume a unix timestamp and leave unchanged.
+                                $parsed_date = totara_date_parse_from_format($csvdateformat, $value);
+                                if ($parsed_date) {
+                                    $value = $parsed_date;
+                                } else {
+                                    // Don't try to put a value if the field has been left empty.
+                                    continue 2;
+                                }
+                                break;
+                            default:
+                                break;
                         }
                         $cfield_data[$cf] = $value;
                         unset($dbrow[$cf]);

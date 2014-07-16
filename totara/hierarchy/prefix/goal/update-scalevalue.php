@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,14 +32,30 @@ $scope = required_param('scope', PARAM_INT);
 $scalevalueid = required_param('scalevalueid', PARAM_INT);
 $userid = required_param('userid', PARAM_INT);
 $nojs = optional_param('nojs', false, PARAM_BOOL);
+$itemid = required_param('goalitemid', PARAM_INT);
 
-// Check if they have admin permissions.
-if (!goal::can_update_goals($userid, $scope)) {
+$goalitem = goal::get_goal_item(array('id' => $itemid), $scope);
+
+$goal = new goal();
+if (!$permissions = $goal->get_permissions(null, $userid)) {
+    echo get_string('error:viewusergoals', 'totara_hierarchy');
+    exit;
+}
+
+extract($permissions);
+
+// Check if they have permission to edit this goal.
+if ($scope == goal::SCOPE_PERSONAL && !$can_edit[$goalitem->assigntype]) {
     echo get_string('error:updatescalevalue', 'totara_hierarchy');
+    exit;
+}
+if ($scope == goal::SCOPE_COMPANY && !$can_edit_company) {
+    echo get_string('error:updatescalevalue', 'totara_hierarchy');
+    exit;
 }
 
 $todb = new stdClass();
-$todb->id = required_param('goalitemid', PARAM_INT);
+$todb->id = $itemid;
 $todb->scalevalueid = $scalevalueid;
 $result = goal::update_goal_item($todb, $scope);
 

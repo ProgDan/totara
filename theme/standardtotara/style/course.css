@@ -38,7 +38,15 @@
 .dir-rtl .mform fieldset .advancedbutton {
     text-align:left;
 }
-.courses .coursebox:hover,
+
+.courses .coursebox.even:hover {
+    background-color:#f6f6f6 !important;
+}
+
+.courses .coursebox.odd:hover {
+    background-color:transparent !important;
+}
+
 .course_category_tree .courses > .paging.paging-morelink:hover {background-color:inherit;}
 .coursebox > .info > .name a {display:block;background-repeat:no-repeat;padding-left:40px;background-position:left top;line-height:2em;}
 

@@ -1,4 +1,25 @@
 <?php
+/*
+ * This file is part of Totara LMS
+ *
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @package totara
+ * @subpackage totara_coursecatalog
+ */
 
 /**
  * Get the number of visible items in or below the selected categories
@@ -230,4 +251,71 @@ function totara_course_is_viewable($courseid, $userid = null) {
     }
 
     return true;
+}
+
+
+/**
+ * Get the where clause sql fragment and parameters needed to restrict an sql query to only those courses or
+ * programs available to a user.
+ *
+ * @param int $userid The user that the results should be restricted for. Defaults to current user.
+ * @param string $fieldbaseid The field in the base sql query which this query can link to.
+ * @param string $fieldvisible The field in the base sql query which contains the visible property.
+ * @param string $fieldaudvis The field in the base sql query which contains the audiencevisibile property.
+ * @param int $instancetype Either COHORT_ASSN_ITEMTYPE_COURSE or COHORT_ASSN_ITEMTYPE_PROGRAM.
+ * @return array(sqlstring, array(sqlparams))
+ */
+function totara_visibility_where($userid = null, $fieldbaseid = 'course.id',
+        $fieldvisible = 'course.visible', $fieldaudvis = 'course.audiencevisible', $instancetype = COHORT_ASSN_ITEMTYPE_COURSE) {
+    global $CFG, $USER;
+
+    if (!$userid) {
+        $userid = $USER->id;
+    }
+
+    if (is_siteadmin($userid)) {
+        // Admins can see all records no matter what the visibility.
+        return array('1=1', array());
+
+    } else if (empty($CFG->audiencevisibility)) {
+        // Normal visibility.
+        $sqlnormalvisible = "{$fieldvisible} = :tcvwnormalvisible";
+        return array($sqlnormalvisible, array('tcvwnormalvisible' => 1));
+
+    } else {
+        // Audience visibility all.
+        $sqlall = "{$fieldaudvis} = :tcvwaudvisall";
+        $paramsall = array('tcvwaudvisall' => COHORT_VISIBLE_ALL);
+
+        // Audience visibility selected.
+        $sqlselected = "({$fieldaudvis} = :tcvwaudvisaud AND
+                 EXISTS (SELECT 1
+                           FROM {cohort_visibility} cv
+                           JOIN {cohort_members} cm ON cv.cohortid = cm.cohortid
+                          WHERE cv.instanceid = {$fieldbaseid}
+                            AND cv.instancetype = :tcvwinstancetypeselected
+                            AND cm.userid = :tcvwreportforselected))";
+        $paramsselected = array('tcvwaudvisaud' => COHORT_VISIBLE_AUDIENCE,
+                'tcvwinstancetypeselected' => $instancetype,
+                'tcvwreportforselected' => $userid);
+
+        // Enrolled or assigned user.
+        if ($instancetype == COHORT_ASSN_ITEMTYPE_COURSE) {
+            $sqlenrolled = "EXISTS (SELECT 1
+                                      FROM {user_enrolments} ue
+                                      JOIN {enrol} e ON e.id = ue.enrolid
+                                     WHERE e.courseid = {$fieldbaseid}
+                                       AND ue.userid = :tcvwreportforenrolled)";
+            $paramsenrolled = array('tcvwreportforenrolled' => $userid);
+        } else {
+            $sqlenrolled = "EXISTS (SELECT 1
+                                      FROM {prog_user_assignment} pua
+                                     WHERE pua.programid = {$fieldbaseid}
+                                       AND pua.userid = :tcvwreportforenrolled)";
+            $paramsenrolled = array('tcvwreportforenrolled' => $userid);
+        }
+
+        return array("({$sqlall} OR {$sqlselected} OR {$sqlenrolled})",
+                array_merge($paramsall, $paramsselected, $paramsenrolled));
+    }
 }

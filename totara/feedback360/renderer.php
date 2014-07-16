@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -842,7 +842,7 @@ class totara_feedback360_renderer extends plugin_renderer_base {
             $out .= $this->output->pix_icon('/t/delete_gray', $completestr);
         } else {
             $out .= $this->output->action_icon('', new pix_icon('/t/delete', $removestr), null,
-                    array('class' => 'system_record_del', 'id' => $user->id, 'hidden' => 'hidden'));
+                array('class' => 'system_record_del', 'id' => $user->id));
         }
         $out .= html_writer::end_tag('div');
 

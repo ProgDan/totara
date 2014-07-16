@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,7 +73,7 @@ class totara_program_renderer extends plugin_renderer_base {
             $event = new $class();
             $dropdown_options[$event->get_id()] = $event->get_name();
         }
-        $out = html_writer::select($dropdown_options, $name, null, null, array('id' => $name, 'class' => $name, 'onchange' => 'handle_completion_selection(this.options[this.selectedIndex].value)'));
+        $out = html_writer::select($dropdown_options, $name, null, null, array('id' => $name, 'class' => $name, 'onchange' => 'handle_completion_selection()'));
         $out .= html_writer::script(prog_assignments::get_completion_events_script($name));
         return $out;
     }
@@ -431,7 +431,7 @@ class totara_program_renderer extends plugin_renderer_base {
         $out .= ' ' . get_string('of', 'totara_program') . ' ';
         $out .= $this->completion_events_dropdown();
         $out .= html_writer::empty_tag('input', array('id' => 'instance', 'type' => 'hidden', 'name' => "instance", 'value' => ''));
-        $out .= html_writer::link('#', '', array('id' => 'instancetitle'));
+        $out .= html_writer::link('#', '', array('id' => 'instancetitle', 'onclick' => 'handle_completion_selection()'));
         $out .= html_writer::start_tag('button', array('class' => 'relativeeventtime')) . get_string('settimerelativetoevent', 'totara_program') . html_writer::end_tag('button');
         $out .= html_writer::end_tag('div');
 
@@ -619,7 +619,8 @@ class totara_program_renderer extends plugin_renderer_base {
             $displayoptions = $chelper->get_programs_display_options();
             if (!$chelper->get_programs_display_option('nodisplay') && $coursecat->id != 0) {
                 $programs = prog_get_programs($coursecat->id, 'p.sortorder ASC',
-                        'p.id, p.category, p.sortorder, p.shortname, p.fullname, p.visible, p.icon', $type, $displayoptions);
+                    'p.id, p.category, p.sortorder, p.shortname, p.fullname, p.visible, p.icon, p.audiencevisible',
+                    $type, $displayoptions);
             }
             if ($viewmoreurl = $chelper->get_programs_display_option('viewmoreurl')) {
                 // The option for 'View more' link was specified, display more link.
@@ -1044,8 +1045,13 @@ class totara_program_renderer extends plugin_renderer_base {
         } else {
             $programicon = $this->output->pix_url('/programicons/default', 'totara_core');
         }
+        if (empty($CFG->audiencevisibility)) {
+            $isdimmed = !$program->visible;
+        } else {
+            $isdimmed = $program->audiencevisible != COHORT_VISIBLE_ALL;
+        }
         $programnamelink = html_writer::link(new moodle_url('/totara/program/view.php', array('id' => $program->id)),
-                        $programname, array('class' => $program->visible ? '' : 'dimmed' ,
+                        $programname, array('class' => $isdimmed ? 'dimmed' : '' ,
                         'style' => "background-image:url({$programicon->out()})"));
         $content .= html_writer::tag($nametag, $programnamelink, array('class' => 'name'));
 

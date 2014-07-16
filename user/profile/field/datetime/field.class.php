@@ -83,4 +83,26 @@ class profile_field_datetime extends profile_field_base {
             return userdate($this->data, $format);
         }
     }
+
+    /**
+     * The Datetime field needs extra logic for saving
+     * so override edit_save_data in the lib file.
+     *
+     * @param   mixed   data coming from the form
+     * @return  mixed   returns data id if success of db insert/update,
+     *                  false on fail, 0 if not permitted
+     */
+    function edit_save_data($usernew) {
+        global $DB;
+
+        $fieldname = $this->inputname;
+
+        // If a datetime is disabled then remove any existing data
+        if (empty($usernew->$fieldname)) {
+            $DB->delete_records('user_info_data', array('userid' => $usernew->id, 'fieldid' => $this->field->id));
+            return;
+        }
+
+        parent::edit_save_data($usernew);
+    }
 }

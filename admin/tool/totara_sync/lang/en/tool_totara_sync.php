@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,6 +76,8 @@ $string['sourceallrecords'] = 'Source contains all records';
 $string['sourceallrecordsdesc'] = 'Does the source provide all sync records, everytime <strong>OR</strong> are only records that need to be updated/deleted provided? If "No" (only records to be updated/deleted), then the source must use the <strong>"delete" flag</strong>.';
 $string['allowduplicatedemails'] = 'Allow duplicate emails';
 $string['allowduplicatedemailsdesc'] = 'If "Yes" duplicated emails are allowed from the source. If "No" only unique emails are allowed.';
+$string['ignoreexistingpass'] = 'Only sync new users\' passwords';
+$string['ignoreexistingpassdesc'] = 'If "Yes" passwords are only updated for new users, if "No" all users\' passwords are updated';
 $string['checkuserconfig'] = 'These settings change the expected <a href=\'{$a}\'>source configuration</a>. You should check the format of your data source matches the new source configuration';
 $string['allowedactions'] = 'Allowed sync actions';
 $string['create'] = 'Create';
@@ -308,8 +310,8 @@ $string['generalsettings'] = 'General settings';
 $string['invalidemailaddress'] = 'Invalid email address \'{$a}\'';
 $string['notifications'] = 'Notifications';
 $string['notifymailto'] = 'Email notifications to';
-$string['notifymailto_help'] = 'A comma-separated list of email addresses so which nofifications should be sent.';
-$string['notifytypes'] = 'Send nofications for';
+$string['notifymailto_help'] = 'A comma-separated list of email addresses so which notifications should be sent.';
+$string['notifytypes'] = 'Send notifications for';
 $string['schedule'] = 'Schedule';
 
 ?>

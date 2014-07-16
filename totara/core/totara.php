@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,86 @@ if (!defined('MOODLE_INTERNAL')) {
 }
 
 define('PUBLIC_KEY_PATH', $CFG->dirroot . '/totara_public.pem');
+
+/**
+ * This function loads the program settings that are available for the user
+ *
+ * @param object $navinode The navigation_node to add the settings to
+ * @param bool $forceopen If set to true the course node will be forced open
+ * @return navigation_node|false
+ */
+function totara_load_program_settings($navinode, $context, $forceopen = false) {
+    $program = new program($context->instanceid);
+    $exceptions = $program->get_exception_count();
+    $exceptioncount = $exceptions ? $exceptions : 0;
+
+    $adminnode = $navinode->add(get_string('programadministration', 'totara_program'), null, navigation_node::TYPE_COURSE, null, 'progadmin');
+    if ($forceopen) {
+        $adminnode->force_open();
+    }
+    // Standard tabs.
+    if (has_capability('totara/program:viewprogram', $context)) {
+        $url = new moodle_url('/totara/program/edit.php', array('id' => $program->id, 'action' => 'view'));
+        $adminnode->add(get_string('overview', 'totara_program'), $url, navigation_node::TYPE_SETTING, null,
+                    'progoverview', new pix_icon('i/settings', get_string('overview', 'totara_program')));
+    }
+    if (has_capability('totara/program:configuredetails', $context)) {
+        $url = new moodle_url('/totara/program/edit.php', array('id' => $program->id, 'action' => 'edit'));
+        $adminnode->add(get_string('details', 'totara_program'), $url, navigation_node::TYPE_SETTING, null,
+                    'progdetails', new pix_icon('i/settings', get_string('details', 'totara_program')));
+    }
+    if (has_capability('totara/program:configurecontent', $context)) {
+        $url = new moodle_url('/totara/program/edit_content.php', array('id' => $program->id));
+        $adminnode->add(get_string('content', 'totara_program'), $url, navigation_node::TYPE_SETTING, null,
+                    'progcontent', new pix_icon('i/settings', get_string('content', 'totara_program')));
+    }
+    if (has_capability('totara/program:configureassignments', $context)) {
+        $url = new moodle_url('/totara/program/edit_assignments.php', array('id' => $program->id));
+        $adminnode->add(get_string('assignments', 'totara_program'), $url, navigation_node::TYPE_SETTING, null,
+                    'progassignments', new pix_icon('i/settings', get_string('assignments', 'totara_program')));
+    }
+    if (has_capability('totara/program:configuremessages', $context)) {
+        $url = new moodle_url('/totara/program/edit_messages.php', array('id' => $program->id));
+        $adminnode->add(get_string('messages', 'totara_program'), $url, navigation_node::TYPE_SETTING, null,
+                    'progmessages', new pix_icon('i/settings', get_string('messages', 'totara_program')));
+    }
+    if (($exceptioncount > 0) && has_capability('totara/program:handleexceptions', $context)) {
+        $url = new moodle_url('/totara/program/exceptions.php', array('id' => $program->id, 'page' => 0));
+        $adminnode->add(get_string('exceptions', 'totara_program', $exceptioncount), $url, navigation_node::TYPE_SETTING, null,
+                    'progexceptions', new pix_icon('i/settings', get_string('exceptionsreport', 'totara_program')));
+    }
+    if ($program->certifid && has_capability('totara/certification:configurecertification', $context)) {
+        $url = new moodle_url('/totara/certification/edit_certification.php', array('id' => $program->id));
+        $adminnode->add(get_string('certification', 'totara_certification'), $url, navigation_node::TYPE_SETTING, null,
+                    'certification', new pix_icon('i/settings', get_string('certification', 'totara_certification')));
+    }
+    // Roles and permissions.
+    $usersnode = $adminnode->add(get_string('users'), null, navigation_node::TYPE_CONTAINER, null, 'users');
+    // Override roles.
+    if (has_capability('moodle/role:review', $context)) {
+        $url = new moodle_url('/admin/roles/permissions.php', array('contextid' => $context->id));
+    } else {
+        $url = null;
+    }
+    $permissionsnode = $usersnode->add(get_string('permissions', 'role'), $url, navigation_node::TYPE_SETTING, null, 'override');
+    // Add assign or override roles if allowed.
+    if (is_siteadmin()) {
+        if (has_capability('moodle/role:assign', $context)) {
+            $url = new moodle_url('/admin/roles/assign.php', array('contextid' => $context->id));
+            $permissionsnode->add(get_string('assignedroles', 'role'), $url, navigation_node::TYPE_SETTING, null,
+                    'roles', new pix_icon('t/assignroles', get_string('assignedroles', 'role')));
+        }
+    }
+    // Check role permissions.
+    if (has_any_capability(array('moodle/role:assign', 'moodle/role:safeoverride', 'moodle/role:override', 'moodle/role:assign'), $context)) {
+        $url = new moodle_url('/admin/roles/check.php', array('contextid' => $context->id));
+        $permissionsnode->add(get_string('checkpermissions', 'role'), $url, navigation_node::TYPE_SETTING, null,
+                    'permissions', new pix_icon('i/checkpermissions', get_string('checkpermissions', 'role')));
+    }
+    // Just in case nothing was actually added.
+    $usersnode->trim_if_empty();
+    $adminnode->trim_if_empty();
+}
 
 /**
  * Returns the major Totara version of this site (which may be different from Moodle in older versions)
@@ -1466,7 +1546,7 @@ function totara_build_menu() {
     }
 
     require_once($CFG->dirroot . '/totara/plan/lib.php');
-    $canviewlearningplans = dp_can_view_users_plans($USER->id);
+    $canviewlearningplans = !empty($CFG->enablelearningplans) && dp_can_view_users_plans($USER->id);
     $requiredlearninglink = prog_get_tab_link($USER->id);
 
     require_once($CFG->dirroot . '/totara/reportbuilder/lib.php');
@@ -1496,10 +1576,10 @@ function totara_build_menu() {
     require_once($CFG->dirroot . '/totara/appraisal/lib.php');
     require_once($CFG->dirroot . '/totara/feedback360/lib.php');
     require_once($CFG->dirroot . '/totara/hierarchy/prefix/goal/lib.php');
-    $viewownappraisals = appraisal::can_view_own_appraisals($USER->id);
-    $viewappraisals = $viewownappraisals || appraisal::can_view_staff_appraisals($USER->id);
-    $viewfeedback360s = feedback360::can_view_feedback360s($USER->id);
-    $viewgoals = goal::can_view_goals($USER->id);
+    $viewownappraisals = !empty($CFG->enableappraisals) && appraisal::can_view_own_appraisals($USER->id);
+    $viewappraisals = !empty($CFG->enableappraisals) && ($viewownappraisals || appraisal::can_view_staff_appraisals($USER->id));
+    $viewfeedback360s = !empty($CFG->enablefeedback360) && feedback360::can_view_feedback360s($USER->id);
+    $viewgoals = !empty($CFG->enablegoals) && goal::can_view_goals($USER->id);
     if ($viewappraisals || $viewfeedback360s || $viewgoals) {
         if ($viewownappraisals) {
             $tree[] = (object)array(
@@ -1935,6 +2015,14 @@ function totara_theme_generate_autocolors($css, $theme, $substitutions) {
 
             $find[] = "[[setting:{$setting}-$suffix]]";
             $replace[] = call_user_func_array($function_name, $function_args);
+        }
+
+        if ($setting == 'headerbgc') {
+            $find[] = "[[setting:heading-on-headerbgc]]";
+            $replace[] = (totara_readable_text($value) == '#000000' ? '#444444' : '#b3b3b3');
+
+            $find[] = "[[setting:text-on-headerbgc]]";
+            $replace[] = (totara_readable_text($value) == '#000000' ? '#444444' : '#cccccc');
         }
     }
     return str_replace($find, $replace, $css);

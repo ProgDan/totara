@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -292,6 +292,15 @@ class program {
                     foreach ($user_assignments as $ua) {
                         // Check user exists for current assignment
                         if ($user->id == $ua->userid && $ua->assignmentid == $assign->id) {
+                            $sendmessage = false;
+
+                            $exception = $DB->get_record('prog_exception', array('userid' => $ua->userid, 'assignmentid' => $ua->assignmentid));
+
+                            if (!empty($exception) && $exception->timeraised == $ua->timeassigned) {
+                                // This exception was raised the first time they were assigned, they haven't received an assignment message yet.
+                                $sendmessage = true;
+                            }
+
                             $user_exists = true;
                             $user_assign_data = $ua;
                             break;
@@ -303,16 +312,20 @@ class program {
 
                         // Create user assignment object
                         $current_assignment = new user_assignment($user->id, $user_assign_data->assignmentid, $this->id);
-                        if (!in_array($user_assign_data->exceptionstatus,
-                               array(PROGRAM_EXCEPTION_RAISED, PROGRAM_EXCEPTION_DISMISSED, PROGRAM_EXCEPTION_RESOLVED)) &&
-                            (isset($current_assignment->completion)
-                                            && $timedue != $current_assignment->completion->timedue)) {
-                            // there is no exception, and the timedue has changed
+
+                        if (!empty($current_assignment->completion) && $timedue != $current_assignment->completion->timedue) {
+                            // The timedue has changed, we'll need to update it and check for exceptions.
 
                             if ($assign->completionevent == COMPLETION_EVENT_FIRST_LOGIN && $timedue === false) {
                                 // this means that the user hasn't logged in yet
                                 // create a future assignment so we can assign them when they do login
-                                $this->create_future_assignment($this->id, $user->id, $assign->id);
+                                $fassigncount++;
+                                $fassignusers[$user->id] = $user->id;
+                                if ($fassigncount == BATCH_INSERT_MAX_ROW_COUNT) {
+                                    $this->create_future_assignments_bulk($this->id, $fassignusers, $assign->id);
+                                    $fassigncount = 0;
+                                    $fassignusers = array();
+                                }
                                 continue;
                             }
 
@@ -324,6 +337,16 @@ class program {
                                 $user_assign_todb->exceptionstatus = $exceptions ? PROGRAM_EXCEPTION_RAISED : PROGRAM_EXCEPTION_NONE;
 
                                 $DB->update_record('prog_user_assignment', $user_assign_todb);
+                            }
+
+                            if (empty($exceptions) && $sendmessage) {
+                                // Add the user to the message queue so they'll receive an assignment message.
+                                $eventdata = new stdClass();
+                                $eventdata->programid = $this->id;
+                                $eventdata->userid = $user->id;
+
+                                $queue = array("new:{$user->id}" => $eventdata);
+                                $message_queue = array_merge($message_queue, $queue);
                             }
                         }
                     } else {
@@ -648,24 +671,24 @@ class program {
             }
         }
 
-        // Else it's a relative event, need to do a lookup
+        // Else it's a relative event, need to do a lookup.
         global $COMPLETION_EVENTS_CLASSNAMES;
 
         if (!isset($COMPLETION_EVENTS_CLASSNAMES[$assignment_record->completionevent])) {
             throw new ProgramException(get_string('eventnotfound', 'totara_program', $assignment_record->completionevent));
         }
 
-        // See if we can retrieve the object form the cache
+        // See if we can retrieve the object form the cache.
         if (isset($this->completion_object_cache[$assignment_record->completionevent])) {
             $event_object = $this->completion_object_cache[$assignment_record->completionevent];
         }
         else {
-            // Else make it it and add to the cache for future use
+            // Else make it it and add to the cache for future use.
             $event_object = new $COMPLETION_EVENTS_CLASSNAMES[$assignment_record->completionevent]();
             $this->completion_object_cache[$assignment_record->completionevent] = $event_object;
         }
 
-        $basetime = $event_object->get_timestamp($userid, $assignment_record->completioninstance);
+        $basetime = $event_object->get_timestamp($userid, $assignment_record);
 
         if ($basetime == false) {
             return false;
@@ -704,7 +727,9 @@ class program {
      * @return bool True if the program is assigned to a learning plan, false if not
      */
     public function assigned_to_users_non_required_learning($userid) {
-        global $DB;
+        global $DB, $CFG;
+        require_once($CFG->dirroot . '/totara/plan/lib.php');
+
         $sql = "SELECT p.id
                 FROM {dp_plan} AS p
                 JOIN {dp_plan_program_assign} AS ppa ON p.id = ppa.planid
@@ -1010,11 +1035,14 @@ class program {
         }
 
         $userassigned = $this->user_is_assigned($userid);
+        $timedue = null;
 
         // display the reason why this user has been assigned to the program (if it is mandatory for the user)
         if ($userassigned) {
             $prog_completion = $DB->get_record('prog_completion', array('programid' => $this->id, 'userid' => $userid, 'coursesetid' => 0));
             $user_assignments = $DB->get_records_select('prog_user_assignment', "programid = ? AND userid = ?", array($this->id, $userid));
+            $timedue = $prog_completion->timedue;
+
             if (count($user_assignments) > 0) {
                 if ($viewinganothersprogram) {
                     $message .= html_writer::tag('p', get_string('assignmentcriteriamanager', 'totara_program'));
@@ -1047,11 +1075,19 @@ class program {
                 $out .= html_writer::start_tag('p', array('class' => 'certifpath'));
                 if ($certifcompletion->certifpath == CERTIFPATH_CERT) {
                     if ($certifcompletion->renewalstatus == CERTIFRENEWALSTATUS_EXPIRED) {
+                        $sql = 'SELECT MAX(timeexpires)
+                                FROM {certif_completion_history}
+                                WHERE userid = :uid
+                                AND certifid = :cid';
+                        $params = array('uid' => $userid, 'cid' => $this->certifid);
+                        $timedue = $DB->get_field_sql($sql, $params);
+
                         $out .= get_string('certexpired', 'totara_certification');
                     } else {
                         $out .= get_string('certinprogress', 'totara_certification');
                     }
                 } else {
+                    $timedue = $certifcompletion->timeexpires;
                     if ($now > $certifcompletion->timewindowopens) {
                         $out .= get_string('recertwindowopen', 'totara_certification');
                         $out .= get_string('recertwindowexpiredate', 'totara_certification',
@@ -1089,9 +1125,11 @@ class program {
                 $startdatestr = ($prog_completion->timestarted != 0
                                 ? $this->display_date_as_text($prog_completion->timestarted)
                                 : get_string('nostartdate', 'totara_program'));
-                $duedatestr = (empty($prog_completion->timedue) || $prog_completion->timedue == COMPLETION_TIME_NOT_SET)
-                                ? get_string('duedatenotset', 'totara_program')
-                                : $this->display_date_as_text($prog_completion->timedue);
+                if ($iscertif) {
+                    $duedatestr = $this->display_duedate($timedue, $certifcompletion->certifpath, $certifcompletion->status);
+                } else {
+                    $duedatestr = $this->display_duedate($timedue);
+                }
                 $duedatestr .= html_writer::empty_tag('br');
                 $duedatestr .= $request;
 
@@ -1131,9 +1169,9 @@ class program {
 
                 $out .= $this->display_courseset(CERTIFPATH_RECERT, $userid, $viewinganothersprogram);
             } else if ($certifcompletion) {
-                // If on certification path OR if on recertification but not recertified before: display certification coursesset
-                // else display recert path.
-                $histcount = $DB->count_records('certif_completion_history', array('certifid' => $this->certifid, 'userid' =>  $userid));
+                // If on certification path OR if on recertification but not recertified before: display certification coursesset,
+                // Else display recert path.
+                $histcount = $DB->count_records('certif_completion_history', array('certifid' => $this->certifid, 'userid' => $userid, 'unassigned' => 0));
 
                 if ($certifcompletion->certifpath == CERTIFPATH_CERT ||
                                 ($certifcompletion->certifpath == CERTIFPATH_RECERT && !$histcount)) {
@@ -1252,18 +1290,35 @@ class program {
     /**
      * Display the due date for a program
      *
-     * @param int $itemid
      * @param int $duedate
+     * @param int $certifpath   Optional param telling us the path of the certification
+     * @param int $certstatus   Optional param telling us the status of the certification
      * @return string
      */
-    function display_duedate($duedate) {
-        $out = '';
+    function display_duedate($duedate, $certifpath = null, $certstatus = null) {
+        global $OUTPUT;
 
-        if ($duedate == COMPLETION_TIME_NOT_SET) {
-            return get_string('noduedate', 'totara_program');
+        if (empty($duedate) || $duedate == COMPLETION_TIME_NOT_SET) {
+            if ($certifpath == null && $certstatus == null) {
+                // This is a program, display no due date set.
+                return get_string('duedatenotset', 'totara_program');
+            } else if ($certifpath == CERTIFPATH_CERT) {
+                if ($certstatus == CERTIFSTATUS_EXPIRED) {
+                    // This certification has expired.
+                    return $OUTPUT->error_text(get_string('overdue', 'totara_program'));
+                } else {
+                    // This is the first run through of the certification and no due date was set.
+                    return get_string('duedatenotset', 'totara_program');
+                }
+            } else {
+                // Something has gone wrong here, a certification on recert should always have a duedate.
+                print_error('error:recertduedatenotset', 'totara_program');
+            }
+
         }
-        $out .= $this->display_date_as_text($duedate);
 
+        $out = '';
+        $out .= $this->display_date_as_text($duedate);
         // highlight dates that are overdue or due soon
         $out .= $this->display_duedate_highlight_info($duedate);
 
@@ -1293,6 +1348,8 @@ class program {
      * @return string
      */
     function display_duedate_highlight_info($duedate) {
+        global $OUTPUT;
+
         $out = '';
         $now = time();
         if (isset($duedate)) {
@@ -1300,7 +1357,7 @@ class program {
             if (($duedate < $now) && ($now - $duedate < 60*60*24)) {
                 $out .= get_string('duetoday', 'totara_plan');
             } else if ($duedate < $now) {
-                $out .= get_string('overdue', 'totara_plan');
+                $out .= $OUTPUT->error_text(get_string('overdue', 'totara_plan'));
             } else if ($duedate - $now < 60*60*24*7) {
                 $days = ceil(($duedate - $now)/(60*60*24));
                 $out .= get_string('dueinxdays', 'totara_plan', $days);
@@ -1325,7 +1382,7 @@ class program {
         $prog_completion = $DB->get_record('prog_completion', array('programid' => $this->id, 'userid' => $userid, 'coursesetid' => 0));
 
         if (!$prog_completion) {
-            $out = get_string('notenrolled', 'totara_program');
+            $out = get_string('notassigned', 'totara_program');
             return $out;
         } else if ($prog_completion->status == STATUS_PROGRAM_COMPLETE) {
             $overall_progress = 100;
@@ -1478,7 +1535,12 @@ class program {
             }
 
             // If this user is able to view hidden programs, then let it be visible.
-            if (has_capability('totara/program:viewhiddenprograms', program_get_context($this->id), $user->id)) {
+            if (empty($this->certifid)) {
+                $capability = 'totara/program:viewhiddenprograms';
+            } else {
+                $capability = 'totara/certification:viewhiddencertifications';
+            }
+            if (has_capability($capability, program_get_context($this->id), $user->id)) {
                 return true;
             }
         } else {

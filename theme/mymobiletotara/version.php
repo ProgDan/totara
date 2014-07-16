@@ -1,9 +1,8 @@
 <?php
-
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  * Copyright (C) 1999 onwards Martin Dougiamas
  *
  * This program is free software; you can redistribute it and/or modify
@@ -24,9 +23,6 @@
  * @author Russell England <russell.england@totaralms.com>
  * @package theme
  * @subpackage mymobiletotara
- *
- * @copyright Totara Learning Solutions Ltd
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die;

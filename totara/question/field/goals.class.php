@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -210,9 +210,19 @@ class question_goals extends reviewrating {
         global $DB;
 
         $goalitem = goal::get_goal_item(array('id' => $item->itemid), $item->scope);
+
         if (empty($goalitem)) {
             return;
         }
+
+        $goal = new goal();
+        if (!$permissions = $goal->get_permissions(null, $this->subjectid)) {
+            // Error setting up page permissions.
+            print_error('error:viewusergoals', 'totara_hierarchy');
+        }
+
+        extract($permissions);
+
         $scalevalueid = $goalitem->scalevalueid;
 
         if (($scalevalueid == 0) || ($item->scope == goal::SCOPE_PERSONAL && $goalitem->scaleid == 0)) {
@@ -220,10 +230,15 @@ class question_goals extends reviewrating {
             $form->addElement('static', '', get_string('goalstatus', 'totara_question'),
                     html_writer::tag('em', get_string('goalhasnoscale', 'totara_question')));
         } else {
-            // Calculate permissions.
-            $canupdatecompanygoals = goal::can_update_goals($this->subjectid, goal::SCOPE_COMPANY);
-            $canupdatepersonalgoals = goal::can_update_goals($this->subjectid, goal::SCOPE_PERSONAL);
-            $caneditstatus = ($canupdatecompanygoals || $canupdatepersonalgoals) && $this->cananswer && !$this->viewonly;
+            // Check the appropriate permissions.
+            if ($item->scope == goal::SCOPE_PERSONAL) {
+                // Check the personal permissions.
+                $caneditstatus = $can_edit[$goalitem->assigntype];
+
+            } else {
+                // Check the company permissions.
+                $caneditstatus = $can_edit_company;
+            }
 
             // Get scalevalue (includes scaleid).
             $scalevalue = $DB->get_record('goal_scale_values', array('id' => $scalevalueid));
@@ -449,24 +464,28 @@ class question_goals extends reviewrating {
     public function edit_set(stdClass $data, $source) {
         parent::edit_set($data, $source);
 
+        $goal = new goal();
+        if (!$permissions = $goal->get_permissions(null, $this->subjectid)) {
+            // Error setting up page permissions.
+            print_error('error:viewusergoals', 'totara_hierarchy');
+        }
+
+        extract($permissions);
+
         if ($source == 'form') {
             // Save the scalevalueids to the db.
-            $canupdatecompanygoals = goal::can_update_goals($this->subjectid, goal::SCOPE_COMPANY);
-            $canupdatepersonalgoals = goal::can_update_goals($this->subjectid, goal::SCOPE_PERSONAL);
-            if ($canupdatecompanygoals || $canupdatepersonalgoals) {
-                $goals = $this->get_review_items();
-                foreach ($goals as $goal) {
-                    $name = $this->get_prefix_form() . '_scalevalueid_' . $goal->itemid . '_' . $goal->scope;
-                    if (isset($data->$name)) {
-                        $scalevalueid = $data->$name;
-                        $todb = new stdClass();
-                        $todb->id = $goal->itemid;
-                        $todb->scalevalueid = $scalevalueid;
-                        if ($goal->scope == goal::SCOPE_COMPANY && $canupdatecompanygoals) {
-                            goal::update_goal_item($todb, goal::SCOPE_COMPANY);
-                        } else if ($goal->scope == goal::SCOPE_PERSONAL && $canupdatepersonalgoals) {
-                            goal::update_goal_item($todb, goal::SCOPE_PERSONAL);
-                        }
+            $goals = $this->get_review_items();
+            foreach ($goals as $goal) {
+                $name = $this->get_prefix_form() . '_scalevalueid_' . $goal->itemid . '_' . $goal->scope;
+                if (isset($data->$name)) {
+                    $scalevalueid = $data->$name;
+                    $todb = new stdClass();
+                    $todb->id = $goal->itemid;
+                    $todb->scalevalueid = $scalevalueid;
+                    if ($goal->scope == goal::SCOPE_COMPANY && $can_edit_company) {
+                        goal::update_goal_item($todb, goal::SCOPE_COMPANY);
+                    } else if ($goal->scope == goal::SCOPE_PERSONAL && $can_edit[$goal->assigntype]) {
+                        goal::update_goal_item($todb, goal::SCOPE_PERSONAL);
                     }
                 }
             }

@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,10 +66,10 @@ if ($delete != 'none' && confirm_sesskey()) {
             exit;
         } else {
             if ($delete == md5($maxtime . ':' . 'all' . ':' . $runid)) {
-                // delete all sync
+                // Delete all sync.
                 $DB->delete_records('totara_sync_log');
             } else if ($delete == md5($maxtime . ':' . 'partial' . ':' . $runid)) {
-                // delete all but most recent sync
+                // Delete all but most recent sync.
                 $DB->delete_records_select('totara_sync_log', 'runid < ?', array('runid' => $runid));
             }
         }
@@ -102,9 +102,12 @@ echo $OUTPUT->header();
 $countfiltered = $report->get_filtered_count();
 $countall = $report->get_full_count();
 
-$heading = $strheading . ': ' .
-    $renderer->print_result_count_string($countfiltered, $countall);
+$heading = $strheading . ': ' . $renderer->print_result_count_string($countfiltered, $countall);
 echo $OUTPUT->heading($heading);
+
+if ($debug) {
+    $report->debug($debug);
+}
 
 print $renderer->print_description($report->description, $report->_id);
 
@@ -113,16 +116,17 @@ $report->display_search();
 // Print saved search buttons if appropriate.
 echo $report->display_saved_search_options();
 
-if ($countfiltered > 0) {
-    $report->display_table();
+$report->display_table();
 
-    // export button
-    $renderer->export_select($report->_id, $sid);
-}
+// Export button.
+$renderer->export_select($report->_id, $sid);
 
+// Show delete buttons.
 if (has_capability('tool/totara_sync:deletesynclog', $context)) {
-    echo $OUTPUT->single_button(new moodle_url('/' . $CFG->admin . '/tool/totara_sync/admin/synclog.php', array('del' => 'all')), get_string('deleteallsynclog', 'tool_totara_sync'));
-    echo $OUTPUT->single_button(new moodle_url('/' . $CFG->admin . '/tool/totara_sync/admin/synclog.php', array('del' => 'partial')), get_string('deletepartialsynclog', 'tool_totara_sync'));
+    echo $OUTPUT->single_button(new moodle_url('/' . $CFG->admin . '/tool/totara_sync/admin/synclog.php',
+        array('del' => 'all')), get_string('deleteallsynclog', 'tool_totara_sync'));
+    echo $OUTPUT->single_button(new moodle_url('/' . $CFG->admin . '/tool/totara_sync/admin/synclog.php',
+        array('del' => 'partial')), get_string('deletepartialsynclog', 'tool_totara_sync'));
 }
 
 echo $OUTPUT->footer();

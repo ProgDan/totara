@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,14 @@ $pageurl = new moodle_url('/totara/hierarchy/prefix/goal/item/edit_personal.php'
 
 $context = context_user::instance($userid);
 
+$goal = new goal();
+if (!$permissions = $goal->get_permissions(null, $userid)) {
+    // Error setting up page permissions.
+    print_error('error:viewusergoals', 'totara_hierarchy');
+}
+
+extract($permissions);
+
 // Set up the page.
 $PAGE->set_url($pageurl);
 $PAGE->set_context($context);
@@ -44,21 +52,22 @@ $PAGE->set_totara_menu_selected('mygoals');
 $PAGE->set_title($strmygoals);
 $PAGE->set_heading($strmygoals);
 
-// You must have some form of managegoals permission to see this page.
-$cap_admin = has_capability('totara/hierarchy:managegoalassignments', context_system::instance());
-$cap_manager = totara_is_manager($userid) && has_capability('totara/hierarchy:managestaffpersonalgoal', $context);
-$cap_self = ($USER->id == $userid) && has_capability('totara/hierarchy:manageownpersonalgoal', $context);
-
-if (!($cap_admin || $cap_manager || $cap_self)) {
-    print_error('error:createpersonalgoal', 'totara_hierarchy');
-}
-
 if (!empty($goalpersonalid)) {
     $goalpersonal = goal::get_goal_item(array('id' => $goalpersonalid), goal::SCOPE_PERSONAL);
     $goalpersonal->goalpersonalid = $goalpersonal->id;
+
+    // Check the specific permissions for this goal.
+    if (!$can_edit[$goalpersonal->assigntype]) {
+        print_error('error:editgoals', 'totara_hierarchy');
+    }
 } else {
     $goalpersonal = new stdClass();
     $goalpersonal->userid = $userid;
+
+    // Check they have generic permissions to create a personal goal for this user.
+    if (!$can_edit[GOAL_ASSIGNMENT_SELF] && !$can_edit[GOAL_ASSIGNMENT_MANAGER] && !$can_edit[GOAL_ASSIGNMENT_ADMIN]) {
+        print_error('error:createpersonalgoal', 'totara_hierarchy');
+    }
 }
 
 $mform = new goal_edit_personal_form();
@@ -113,13 +122,13 @@ if ($mform->is_cancelled()) {
         // Handle creating a new goal.
 
         // Set the assignment type self/manager/admin.
-        if ($USER->id == $todb->userid && $cap_self) {
+        if ($USER->id == $todb->userid && $can_edit[GOAL_ASSIGNMENT_SELF]) {
             // They are assigning it to themselves.
             $todb->assigntype = GOAL_ASSIGNMENT_SELF;
-        } else if (totara_is_manager($todb->userid) && $cap_manager) {
+        } else if (totara_is_manager($todb->userid) && $can_edit[GOAL_ASSIGNMENT_MANAGER]) {
             // They are assigning it to their team.
             $todb->assigntype = GOAL_ASSIGNMENT_MANAGER;
-        } else if ($cap_admin) {
+        } else if ($can_edit[GOAL_ASSIGNMENT_ADMIN]) {
             // Last option, they are an admin assigning it to someone.
             $todb->assigntype = GOAL_ASSIGNMENT_ADMIN;
         } else {

@@ -36,7 +36,7 @@ class user_filter_date extends user_filter_type {
         $objs[] =& $mform->createElement('static', $this->_name.'_edk', null, get_string('isbefore', 'filters'));
         $objs[] =& $mform->createElement('date_selector', $this->_name.'_edt', null, array('optional' => true));
 
-        $grp =& $mform->addElement('group', $this->_name.'_grp', $this->_label, $objs, '', false);
+        $grp =& $mform->addElement('group', $this->_name.'_grp', format_string($this->_label), $objs, '', false);
 
         if ($this->_advanced) {
             $mform->setAdvanced($this->_name.'_grp');

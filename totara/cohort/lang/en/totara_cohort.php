@@ -1,19 +1,25 @@
 <?php
-
-// This file is part of Moodle - http://moodle.org/
-//
-// Moodle is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Moodle is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+/*
+ * This file is part of Totara LMS
+ *
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @package totara
+ * @subpackage cohort
+ */
 
 $string['abouttocreate'] = 'You are about to create a new audience called "{$a}"';
 $string['actions'] = 'Actions';
@@ -150,11 +156,11 @@ $string['completionmenunotany'] = 'hos NOT completed any';
 $string['completionusercompletedbeforeafter'] = 'User completed:';
 $string['component'] = 'Source';
 $string['configaudiencevisibility'] = 'Default visibility option when the site-wide audience-based visibility setting is enabled';
-$string['configenableaudiencevisibility'] = 'When enabled, course and program visibility will switch to a more advanced interface which supports assigning "Visible learning" to Audiences at a site-wide level.
+$string['configenableaudiencevisibility'] = 'When enabled, course, program and certification visibility will switch to a more advanced interface which supports assigning "Visible learning" to Audiences at a site-wide level.
 
-Once enabled, the visibility of each individual course or program can be set to "Visible to all users", "Hidden from all users" or "Visible to members of the selected audiences". If "Visible to members of the selected audiences" is selected then the course or program is only visible to members of any of the assigned audiences.
+Once enabled, the visibility of each individual course, program or certification can be set to "Visible to all users", "Hidden from all users" or "Visible to members of the selected audiences". If "Visible to members of the selected audiences" is selected then the course, program or certification is only visible to members of any of the assigned audiences.
 
-<strong>Warning:</strong> Enabling this setting will change the visibility of courses and programs across the whole site - the existing "Visibility" setting and the "viewhiddencourses" capability will no longer apply, so courses that are currently hidden may become visible.';
+<strong>Warning:</strong> Enabling this setting will change the visibility of courses, programs and certifications across the whole site - the existing "Visibility" setting and the "viewhiddencourses" capability will no longer apply, so courses, programs and certifications that are currently hidden may become visible.';
 $string['confirmdynamiccohortcreation'] = 'Confirm Dynamic Audience Creation';
 $string['contains'] = ' contains ';
 $string['copy'] = 'Copy';
@@ -249,7 +255,7 @@ $string['excludeuserswho_help'] = 'This setting lets you choose types of users t
 If a user has a plan based on this template that was manually created by them or their manager then they will not get a new plan created.
 
 **having an existing, automatically created plan based on this template** <br />
-If a user has an automatically created based on this template then they will not get a new plan created.
+If a user has an automatically created plan based on this template then they will not get a new plan created.
 
 **have a completed plan based on this template** <br />
 If this option is selected then users who have a completed plans based on this template will not have a new template created.';
@@ -450,7 +456,13 @@ $string['visibility'] = 'Visibility';
 $string['visibleall'] = 'Visible to all users';
 $string['visibleaudience'] = 'Visible to members of the selected audiences';
 $string['visiblelearning'] = 'Visible learning';
-$string['visiblelearning_help'] = 'If "Visible to members of the selected audiences" is selected then the course or program is only visible to members of any of the assigned audiences.';
+$string['visiblelearning_help'] = 'This setting determines whether the course, program or certification appears in the corresponding list.
+
+If "Visible to members of the selected audiences" is selected then it will be visible to all members of the assigned audiences.
+
+Users that are enrolled will be able to see it, not matter what visibility setting is selected.
+
+Users granted the \'manageaudiencevisibility\' capability (managers by default) can see all courses, programs and certifications.';
 $string['visiblenone'] = 'Hidden from all users';
 $string['youhaveadded'] = 'You have added {$a->itemnames} to this program<br />
 <br />

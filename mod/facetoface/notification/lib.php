@@ -2,11 +2,11 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010, 2011 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -355,16 +355,17 @@ class facetoface_notification extends data_object {
         $sent = 0;
         foreach ($recordset as $session) {
             $count++;
-
             // Check if they aren't ready to have their notification sent
             switch ($this->conditiontype) {
                 case MDL_F2F_CONDITION_BEFORE_SESSION:
-                    if (($session->timestart - $this->scheduletime) > $time) {
+                    if ($session->timestart < $time ||
+                       ($session->timestart - $this->scheduletime) > $time) {
                         continue 2;
                     }
                     break;
                 case MDL_F2F_CONDITION_AFTER_SESSION:
-                    if (($session->timefinish + $this->scheduletime) > $time) {
+                    if ($session->timefinish > $time ||
+                       ($session->timefinish + $this->scheduletime) > $time) {
                         continue 2;
                     }
                     break;
@@ -466,7 +467,13 @@ class facetoface_notification extends data_object {
 
         // Load facetoface object
         if (empty($this->_facetoface)) {
-            $this->_facetoface = $DB->get_record('facetoface', array('id' => $this->facetofaceid));
+            $this->_facetoface = $DB->get_record_sql("SELECT f2f.*, c.fullname AS coursename
+                FROM {facetoface} f2f
+                INNER JOIN {course} c ON c.id = f2f.course
+                WHERE f2f.id = ?", array($this->facetofaceid));
+        } else if (!isset($this->_facetoface->coursename)) {
+            $course = $DB->get_record('course', array('id' => $this->_facetoface->course), 'fullname');
+            $this->_facetoface->coursename = $course->fullname;
         }
 
         // Load session object
@@ -482,11 +489,14 @@ class facetoface_notification extends data_object {
         $subject = $this->title;
         $body = $this->body;
         $managerprefix = $this->managerprefix;
+        $options = array('context' => context_course::instance($this->_facetoface->course));
+        $coursename = format_string($this->_facetoface->coursename, true, $options);
 
         $subst = array('subject', 'body', 'managerprefix');
         foreach ($subst as $text) {
             $$text = facetoface_message_substitutions(
                 $$text,
+                $coursename,
                 $this->_facetoface->name,
                 $user,
                 $session,
@@ -742,10 +752,11 @@ class facetoface_notification extends data_object {
  * @param class $session record from the facetoface_sessions table
  * @param integer $userid ID of the recipient of the email
  * @param array $params The parameters for the notification
- * @param mixed $icalattachmenttype The ical attachment type, or MDL_F2F_TEXT to disable ical attachments
+ * @param int $icalattachmenttype The ical attachment type, or MDL_F2F_TEXT to disable ical attachments
+ * @param int $icalattachmentmethod The ical method type: MDL_F2F_INVITE or MDL_F2F_CANCEL
  * @return string Error message (or empty string if successful)
  */
-function facetoface_send_notice($facetoface, $session, $userid, $params, $icalattachmenttype = MDL_F2F_TEXT) {
+function facetoface_send_notice($facetoface, $session, $userid, $params, $icalattachmenttype = MDL_F2F_TEXT, $icalattachmentmethod = MDL_F2F_INVITE) {
     global $DB;
 
     $user = $DB->get_record('user', array('id' => $userid));
@@ -766,7 +777,7 @@ function facetoface_send_notice($facetoface, $session, $userid, $params, $icalat
         foreach ($sessiondates as $sessiondate) {
             $session->sessiondates = array($sessiondate); // One day at a time.
             if ((int)$icalattachmenttype == MDL_F2F_BOTH) {
-                $ical_attach = facetoface_get_ical_attachment($icalattachmenttype, $facetoface, $session, $userid);
+                $ical_attach = facetoface_get_ical_attachment($icalattachmentmethod, $facetoface, $session, $userid);
                 $notice->set_ical_attachment($ical_attach);
             }
             $result .= $notice->send_to_user($user, $session->id, $sessiondate);
@@ -775,7 +786,7 @@ function facetoface_send_notice($facetoface, $session, $userid, $params, $icalat
         $session->sessiondates = $sessiondates;
     } else {
         if ((int)$icalattachmenttype == MDL_F2F_BOTH) {
-            $ical_attach = facetoface_get_ical_attachment($icalattachmenttype, $facetoface, $session, $userid);
+            $ical_attach = facetoface_get_ical_attachment($icalattachmentmethod, $facetoface, $session, $userid);
             $notice->set_ical_attachment($ical_attach);
         }
         $result = $notice->send_to_user($user, $session->id);
@@ -804,7 +815,7 @@ function facetoface_send_cancellation_notice($facetoface, $session, $userid) {
     );
 
     $includeical = !isset($CFG->facetoface_disableicalcancel) || empty($CFG->facetoface_disableicalcancel);
-    return facetoface_send_notice($facetoface, $session, $userid, $params, $includeical ? MDL_F2F_CANCEL : null);
+    return facetoface_send_notice($facetoface, $session, $userid, $params, $includeical ? MDL_F2F_BOTH : MDL_F2F_TEXT, MDL_F2F_CANCEL);
 }
 
 /**
@@ -826,7 +837,7 @@ function facetoface_send_decline_notice($facetoface, $session, $userid) {
             );
 
     $includeical = !isset($CFG->facetoface_disableicalcancel) || empty($CFG->facetoface_disableicalcancel);
-    return facetoface_send_notice($facetoface, $session, $userid, $params, $includeical ? MDL_F2F_CANCEL : null);
+    return facetoface_send_notice($facetoface, $session, $userid, $params, $includeical ? MDL_F2F_BOTH : MDL_F2F_TEXT, MDL_F2F_CANCEL);
 }
 
 /**
@@ -847,7 +858,7 @@ function facetoface_send_datetime_change_notice($facetoface, $session, $userid) 
         'conditiontype' => MDL_F2F_CONDITION_SESSION_DATETIME_CHANGE
     );
 
-    return facetoface_send_notice($facetoface, $session, $userid, $params, MDL_F2F_INVITE);
+    return facetoface_send_notice($facetoface, $session, $userid, $params, MDL_F2F_BOTH, MDL_F2F_INVITE);
 }
 
 
@@ -875,7 +886,7 @@ function facetoface_send_confirmation_notice($facetoface, $session, $userid, $no
         $params['conditiontype'] = MDL_F2F_CONDITION_BOOKING_CONFIRMATION;
     }
 
-    return facetoface_send_notice($facetoface, $session, $userid, $params, $notificationtype);
+    return facetoface_send_notice($facetoface, $session, $userid, $params, $notificationtype, MDL_F2F_INVITE);
 }
 
 
@@ -897,7 +908,7 @@ function facetoface_send_trainer_confirmation_notice($facetoface, $session, $use
         'conditiontype' => MDL_F2F_CONDITION_TRAINER_CONFIRMATION
     );
 
-    return facetoface_send_notice($facetoface, $session, $userid, $params, MDL_F2F_INVITE);
+    return facetoface_send_notice($facetoface, $session, $userid, $params, MDL_F2F_BOTH, MDL_F2F_INVITE);
 }
 
 
@@ -919,7 +930,7 @@ function facetoface_send_trainer_session_cancellation_notice($facetoface, $sessi
         'conditiontype' => MDL_F2F_CONDITION_TRAINER_SESSION_CANCELLATION
     );
 
-    return facetoface_send_notice($facetoface, $session, $userid, $params, MDL_F2F_CANCEL);
+    return facetoface_send_notice($facetoface, $session, $userid, $params, MDL_F2F_BOTH, MDL_F2F_CANCEL);
 }
 
 
@@ -941,7 +952,7 @@ function facetoface_send_trainer_session_unassignment_notice($facetoface, $sessi
         'conditiontype' => MDL_F2F_CONDITION_TRAINER_SESSION_UNASSIGNMENT
     );
 
-    return facetoface_send_notice($facetoface, $session, $userid, $params, MDL_F2F_CANCEL);
+    return facetoface_send_notice($facetoface, $session, $userid, $params, MDL_F2F_BOTH, MDL_F2F_CANCEL);
 }
 
 
@@ -990,7 +1001,7 @@ function facetoface_send_request_notice($facetoface, $session, $userid) {
  * @param   int     $sessionid      Session ID
  * @return  string
  */
-function facetoface_message_substitutions($msg, $facetofacename, $user, $data, $sessionid) {
+function facetoface_message_substitutions($msg, $coursename, $facetofacename, $user, $data, $sessionid) {
     global $CFG, $DB;
 
     if (empty($msg)) {
@@ -1033,6 +1044,7 @@ function facetoface_message_substitutions($msg, $facetofacename, $user, $data, $
         $finishtime  = get_string('unknowntime', 'facetoface');
     }
 
+    $msg = str_replace(get_string('placeholder:coursename', 'facetoface'), $coursename, $msg);
     $msg = str_replace(get_string('placeholder:facetofacename', 'facetoface'), $facetofacename, $msg);
     $msg = str_replace(get_string('placeholder:firstname', 'facetoface'), $user->firstname, $msg);
     $msg = str_replace(get_string('placeholder:lastname', 'facetoface'), $user->lastname, $msg);

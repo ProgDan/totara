@@ -2,11 +2,11 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010, 2011 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -60,6 +60,7 @@ if (!$id) {
 $cohort = $DB->get_record('cohort', array('id' => $id), '*', MUST_EXIST);
 
 $report = reportbuilder_get_embedded_report('cohort_associations_visible', array('cohortid' => $id), false, $sid);
+$report->include_js();
 
 // Handle a request for export.
 if($format != '') {
@@ -68,7 +69,7 @@ if($format != '') {
 }
 
 // Setup lightbox.
-local_js(array(TOTARA_JS_DIALOG,TOTARA_JS_TREEVIEW));
+local_js(array(TOTARA_JS_DIALOG, TOTARA_JS_TREEVIEW));
 
 $PAGE->requires->strings_for_js(array('none'), 'moodle');
 $PAGE->requires->strings_for_js(array('assignvisiblelearning', 'assignenrolledlearning', 'deletelearningconfirm', 'savinglearning'), 'totara_cohort');

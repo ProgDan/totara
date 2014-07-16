@@ -1555,6 +1555,11 @@ class moodle_page {
                     }
                 break;
 
+                case 'default':
+                    // System default theme (ignore any configuration).
+                    return theme_config::DEFAULT_THEME;
+                break;
+
                 case 'site':
                     if ($mnetpeertheme) {
                         return $mnetpeertheme;

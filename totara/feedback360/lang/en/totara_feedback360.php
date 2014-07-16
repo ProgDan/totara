@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,10 +59,11 @@ $string['cancelusersemail'] = 'Cancel existing requests to these external users:
 $string['close'] = 'Close';
 $string['closed'] = 'Closed';
 $string['closenow'] = '(Close Now)';
-$string['confirmactivatefeedback360'] = 'Are you sure you want to activate Feedback - {$a}';
-$string['confirmclosefeedback360'] = 'Are you sure you want to close Feedback - {$a}';
-$string['confirmdeletefeedback360'] = 'Are you sure you want to Delete Feedback - {$a}';
-$string['confirmdeletequestion'] = 'Are you sure you want to delete quesiton - {$a}';
+$string['configenablefeedback360'] = 'If not checked, navigation links to 360 Feedbacks will not be shown';
+$string['confirmactivatefeedback360'] = 'Are you sure you want to activate Feedback - {$a}?';
+$string['confirmclosefeedback360'] = 'Are you sure you want to close Feedback - {$a}?';
+$string['confirmdeletefeedback360'] = 'Are you sure you want to delete Feedback - {$a}?';
+$string['confirmdeletequestion'] = 'Are you sure you want to delete question - {$a}?';
 $string['completed'] = 'Completed';
 $string['content'] = 'Content';
 $string['contentupdated'] = 'Content updated';
@@ -93,6 +94,7 @@ $string['emailrequeststr'] = '<p>{$a->fullname} has requested you fill in their 
 $string['emailrequeststralt'] = '{$a->fullname} has requested you fill in their feedback form. Please click go to the link below and fill in the displayed form:
 
 {$a->url}';
+$string['enablefeedback360'] = 'Show 360 Feedback';
 $string['manageremailrequeststr'] = '<p>{$a->fullname} has requested you fill in their staff member {$a->staffname}\'s feedback form. Please click the link below and fill in the displayed form:<p>
 <p>{$a->link}</p>';
 $string['manageremailrequeststralt'] = '{$a->fullname} has requested you fill in their staff member {$a->staffname}\'s feedback form. Please click go to the link below and fill in the displayed form:
@@ -111,7 +113,7 @@ $string['error:emailformat'] = 'These emails do not match the expected format: '
 $string['error:emailduplicate'] = 'You have duplicate emails, please enter an email only once: ';
 $string['error:emptyuserrequests'] = 'You have no recipients, please select a user or enter an email';
 $string['error:respassignmentaccess'] = 'You do not have permission to access this page';
-$string['error:requestdeletefailure'] = 'Failed to delete feedbackrequest, authentication failure';
+$string['error:requestdeletefailure'] = 'Failed to delete feedback request, authentication failure';
 $string['error:feedback360isactive'] = 'Feedback must be in \'Draft\' or \'Closed\' state to be removed';
 $string['error:feedback360noteditable'] = 'Feedback can not be edited while in an \'Active\' state';
 $string['error:feedbacknotactive'] = 'Feedback can not be edited unless the form is active';
@@ -144,7 +146,7 @@ $string['feedback360aboutcolleagues'] = 'Give feedback about your colleagues';
 $string['feedback360aboutuser'] = 'Feedback about {$a}';
 $string['feedback360aboutyou'] = 'Feedback about you';
 $string['feedback360activated'] = 'Successfully activated Feedback';
-$string['feedback360activenochangesallowed'] = 'This feedback360 is active, no changes can be made to learner assignments';
+$string['feedback360activenochangesallowed'] = 'This 360 Feedback is active, no changes can be made to learner assignments';
 $string['feedback360cloned'] = 'Successfully cloned Feedback';
 $string['feedback360closed'] = 'Successfully closed Feedback';
 $string['feedback360created'] = 'Successfully created Feedback';
@@ -160,7 +162,7 @@ $string['givefeedback'] = 'Give Feedback';
 
 $string['invalidsesskey'] = 'The given session key is not valid. Please resend data again';
 
-$string['loadfeedback360failure'] = 'Failed to load the feedback360';
+$string['loadfeedback360failure'] = 'Failed to load the 360 Feedback';
 
 $string['managefeedback360'] = 'Manage Feedback';
 $string['managefeedback360s'] = 'Manage 360&deg; Feedbacks';

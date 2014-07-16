@@ -587,6 +587,7 @@ class lang_installer {
      */
     public function __construct($langcode = '') {
         global $CFG;
+        require_once($CFG->dirroot . '/totara/core/totara.php');
 
         $this->set_queue($langcode);
         $totaraversion = totara_major_version(); //may return false if something is badly wrong

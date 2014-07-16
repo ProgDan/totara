@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,6 +52,7 @@ define('COMPLETION_EVENT_POSITION_START_DATE', 2);
 define('COMPLETION_EVENT_PROGRAM_COMPLETION', 3);
 define('COMPLETION_EVENT_COURSE_COMPLETION', 4);
 define('COMPLETION_EVENT_PROFILE_FIELD_DATE', 5);
+define('COMPLETION_EVENT_ENROLLMENT_DATE', 6);
 
 global $COMPLETION_EVENTS_CLASSNAMES;
 
@@ -61,6 +62,7 @@ $COMPLETION_EVENTS_CLASSNAMES = array(
     COMPLETION_EVENT_PROGRAM_COMPLETION     => 'prog_assigment_completion_program_completion',
     COMPLETION_EVENT_COURSE_COMPLETION      => 'prog_assigment_completion_course_completion',
     COMPLETION_EVENT_PROFILE_FIELD_DATE     => 'prog_assigment_completion_profile_field_date',
+    COMPLETION_EVENT_ENROLLMENT_DATE        => 'prog_assigment_completion_enrollment_date',
 );
 
 /**
@@ -281,13 +283,15 @@ class prog_assignments {
         $out = '';
 
         $out .= "
-            function handle_completion_selection(eventId) {
+            function handle_completion_selection() {
+                var eventselected = $('#eventtype option:selected').val();
+                eventid = eventselected;
         ";
 
         // Get the script that should be run if we select a specific event
         foreach ($COMPLETION_EVENTS_CLASSNAMES as $class) {
             $event = new $class();
-            $out .= "if (eventId == ". $event->get_id() .") { " . $event->get_script() . " }";
+            $out .= "if (eventid == ". $event->get_id() .") { " . $event->get_script() . " }";
         }
 
         $out .= "
@@ -305,9 +309,9 @@ class prog_assignments {
         $table->data = array();
         foreach ($ASSIGNMENT_CATEGORY_CLASSNAMES as $classname) {
             $category = new $classname();
-            $spanAdded = html_writer::tag('span', '0', array('class' => 'added_'.$category->id));
-            $spanRemoved = html_writer::tag('span', '0', array('class' => 'removed_'.$category->id));
-            $table->data[] = array($category->name,$spanAdded,$spanRemoved);
+            $spanadded = html_writer::tag('span', '0', array('class' => 'added_'.$category->id));
+            $spanremoved = html_writer::tag('span', '0', array('class' => 'removed_'.$category->id));
+            $table->data[] = array($category->name, $spanadded, $spanremoved);
         }
 
         $spanTotalAdded = html_writer::tag('strong', html_writer::tag('span', '0', array('class' => 'total_added')));
@@ -479,30 +483,6 @@ abstract class prog_assignment_category {
                         $original_object->completiontime != $object->completiontime ||
                         $original_object->completionevent != $object->completionevent) {
 
-                        if ($object->completionevent != $original_object->completionevent) {
-                            //Rule Changed
-                            //Delete old exceptions, completion records dates and user assignments
-                            prog_exceptions_manager::delete_exceptions_by_assignment($object->id);
-
-                            // Create comma separated list to use in deletions
-                            $user_assignments_sql = "SELECT userid FROM {prog_user_assignment} WHERE assignmentid = ?";
-                            $user_assignments = $DB->get_records_sql($user_assignments_sql, array($object->id));
-                            if (count($user_assignments) > 0) {
-                                list($assignment_userid_sql, $assignment_userid_params) = $DB->get_in_or_equal(array_keys($user_assignments));
-                                $transaction = $DB->start_delegated_transaction();
-                                $delete_user_assign_sql = "DELETE FROM {prog_user_assignment} WHERE assignmentid = ?";
-                                $DB->execute($delete_user_assign_sql, array($object->id));
-                                $delete_completions_sql = "DELETE FROM {prog_completion} WHERE coursesetid = 0 AND userid {$assignment_userid_sql} AND programid = ?";
-                                $DB->execute($delete_completions_sql, array_merge($assignment_userid_params, array($object->programid)));
-                                $transaction->allow_commit();
-                            }
-
-                        } else if ($object->completiontime != $original_object->completiontime) {
-                            // Completion date changed
-                            // Delete old exceptions
-                            prog_exceptions_manager::delete_exceptions_by_assignment($object->id);
-                        }
-
                         if (!$DB->update_record('prog_assignment', $object)) {
                             print_error('error:updatingprogramassignment', 'totara_program');
                         }
@@ -549,18 +529,18 @@ abstract class prog_assignment_category {
         }
     }
 
- /**
-  * Called when an assignment of this category is going to be added
-  * @param $object
-  */
+    /**
+     * Called when an assignment of this category is going to be added
+     * @param $object
+     */
     protected function _add_assignment_hook($object) {
         return true;
     }
 
-/**
-  * called when an assignment of this list is going to be deleted
-  * @param $object
-  */
+    /**
+     * Called when an assignment of this list is going to be deleted
+     * @param $object
+     */
     protected function _delete_assignment_hook($object) {
         return true;
     }
@@ -837,7 +817,7 @@ class organisations_category extends prog_assignment_category {
     }
 
     function get_js($programid) {
-        $title = get_string('addorganisationstoprogram', 'totara_program');
+        $title = addslashes_js(get_string('addorganisationstoprogram', 'totara_program'));
         $url = 'find_hierarchy.php?type=organisation&table=org&programid='.$programid;
         return "M.totara_programassignment.add_category({$this->id}, 'organisations', '{$url}', '{$title}');";
     }
@@ -923,7 +903,7 @@ class positions_category extends prog_assignment_category {
         if (isset($item->includechildren) && $item->includechildren == 1 && isset($item->path)) {
             $children = $DB->get_fieldset_select('pos', 'id', $DB->sql_like('path', '?'), array($item->path . '/%'));
             $children[] = $item->id;
-            //replace the existing $params
+            // Replace the existing $params.
             list($usql, $params) = $DB->get_in_or_equal($children);
             $where = "pa.positionid $usql";
         }
@@ -953,7 +933,7 @@ class positions_category extends prog_assignment_category {
         global $DB;
 
         // Query to retrieves the data required to determine the number of users
-        //affected by an assignment
+        // affected by an assignment.
         $sql = "SELECT pos.id,
                         pos.fullname,
                         pos.path,
@@ -984,7 +964,7 @@ class positions_category extends prog_assignment_category {
     }
 
     function get_js($programid) {
-        $title = get_string('addpositiontoprogram', 'totara_program');
+        $title = addslashes_js(get_string('addpositiontoprogram', 'totara_program'));
         $url = 'find_hierarchy.php?type=position&table=pos&programid='.$programid;
         return "M.totara_programassignment.add_category({$this->id}, 'positions', '{$url}', '{$title}');";
     }
@@ -1007,7 +987,7 @@ class cohorts_category extends prog_assignment_category {
             get_string('numlearners','totara_program')
         );
 
-        // Go to the database and gets the assignments
+        // Go to the database and gets the assignments.
         $items = $DB->get_records_sql(
             "SELECT cohort.id, cohort.name as fullname, cohort.cohorttype, prog_assignment.completiontime, prog_assignment.completionevent, prog_assignment.completioninstance
             FROM {prog_assignment} prog_assignment
@@ -1015,7 +995,7 @@ class cohorts_category extends prog_assignment_category {
             WHERE prog_assignment.programid = ?
             AND prog_assignment.assignmenttype = ?", array($programid, $this->id));
 
-        // Convert these into html
+        // Convert these into html.
         if (!empty($items)) {
             foreach ($items as $item) {
                 $this->data[] = $this->build_row($item);
@@ -1088,7 +1068,7 @@ class cohorts_category extends prog_assignment_category {
     }
 
     function get_js($programid) {
-        $title = get_string('addcohortstoprogram', 'totara_program');
+        $title = addslashes_js(get_string('addcohortstoprogram', 'totara_program'));
         $url = 'find_cohort.php?programid='.$programid;
         return "M.totara_programassignment.add_category({$this->id}, 'cohorts', '{$url}', '{$title}');";
     }
@@ -1118,7 +1098,7 @@ class managers_category extends prog_assignment_category {
             get_string('numlearners','totara_program')
         );
 
-        // Go to the database and gets the assignments
+        // Go to the database and gets the assignments.
         $items = $DB->get_records_sql("
             SELECT u.id, " . $DB->sql_fullname('u.firstname', 'u.lastname') . " as fullname,
                 pa.managerpath AS path, prog_assignment.includechildren, prog_assignment.completiontime,
@@ -1130,7 +1110,7 @@ class managers_category extends prog_assignment_category {
                AND prog_assignment.assignmenttype = ?
         ", array(POSITION_TYPE_PRIMARY, $programid, $this->id));
 
-        // Convert these into html
+        // Convert these into html.
         if (!empty($items)) {
             foreach ($items as $item) {
                 //sometimes a manager may not have a pos_assignment record e.g. top manager in the tree
@@ -1149,8 +1129,8 @@ class managers_category extends prog_assignment_category {
                   FROM {user} AS u
              LEFT JOIN {pos_assignment} pa ON u.id = pa.userid AND pa.type = ?
                  WHERE u.id = ?";
-        //sometimes a manager may not have a pos_assignment record e.g. top manager in the tree
-        //so we need to set a default path
+        // Sometimes a manager may not have a pos_assignment record e.g. top manager in the tree
+        // so we need to set a default path.
         $item = $DB->get_record_sql($sql, array(POSITION_TYPE_PRIMARY, $itemid));
         if (empty($item->path)) {
             $item->path = "/{$itemid}";
@@ -1188,11 +1168,11 @@ class managers_category extends prog_assignment_category {
         $primarytype = POSITION_TYPE_PRIMARY;
 
         if (isset($item->includechildren) && $item->includechildren == 1 && isset($item->path)) {
-            // for a manager's entire team
+            // For a manager's entire team.
             $where = "pa.type = ? AND " . $DB->sql_like('pa.managerpath', '?');
             $params = array($primarytype, $item->path . '/%');
         } else {
-            // for a manager's direct team
+            // For a manager's direct team.
             $where = "pa.type = ? AND pa.managerid = ?";
             $params = array($primarytype, $item->id);
         }
@@ -1220,7 +1200,7 @@ class managers_category extends prog_assignment_category {
         $primarytype = POSITION_TYPE_PRIMARY;
 
         // Query to retrieves the data required to determine the number of users
-        //affected by an assignment
+        // affected by an assignment.
         $sql = "SELECT u.id,
                         pa.managerpath AS path,
                         prog_assignment.includechildren
@@ -1230,8 +1210,8 @@ class managers_category extends prog_assignment_category {
                  WHERE prog_assignment.id = ?";
 
         if ($item = $DB->get_record_sql($sql, array(POSITION_TYPE_PRIMARY, $assignment->id))) {
-            //sometimes a manager may not have a pos_assignment record e.g. top manager in the tree
-            //so we need to set a default path
+            // Sometimes a manager may not have a pos_assignment record e.g. top manager in the tree.
+            // So we need to set a default path.
             if (empty($item->path)) {
                 $item->path = "/{$item->id}";
             }
@@ -1247,7 +1227,7 @@ class managers_category extends prog_assignment_category {
     }
 
     function get_js($programid) {
-        $title = get_string('addmanagerstoprogram', 'totara_program');
+        $title = addslashes_js(get_string('addmanagerstoprogram', 'totara_program'));
         $url = 'find_manager_hierarchy.php?programid='.$programid;
         return "M.totara_programassignment.add_category({$this->id}, 'managers', '{$url}', '{$title}');";
     }
@@ -1269,7 +1249,7 @@ class individuals_category extends prog_assignment_category {
             get_string('complete','totara_program')
         );
 
-        // Go to the database and gets the assignments
+        // Go to the database and gets the assignments.
         $items = $DB->get_records_sql(
             "SELECT individual.id, " . $DB->sql_fullname('individual.firstname', 'individual.lastname') . " as fullname, prog_assignment.completiontime, prog_assignment.completionevent, prog_assignment.completioninstance
                FROM {prog_assignment} prog_assignment
@@ -1277,7 +1257,7 @@ class individuals_category extends prog_assignment_category {
               WHERE prog_assignment.programid = ?
                 AND prog_assignment.assignmenttype = ?", array($programid, $this->id));
 
-        // Convert these into html
+        // Convert these into html.
         if (!empty($items)) {
             foreach ($items as $item) {
                 $this->data[] = $this->build_row($item);
@@ -1324,7 +1304,7 @@ class individuals_category extends prog_assignment_category {
     }
 
     function get_js($programid) {
-        $title = get_string('addindividualstoprogram', 'totara_program');
+        $title = addslashes_js(get_string('addindividualstoprogram', 'totara_program'));
         $url = 'find_individual.php?programid='.$programid;
         return "M.totara_programassignment.add_category({$this->id}, 'individuals', '{$url}', '{$title}');";
     }
@@ -1339,7 +1319,9 @@ class user_assignment {
         $this->assignment = $assignment;
         $this->programid = $programid;
 
-        $this->completion = $DB->get_record('prog_completion', array('programid' => $programid, 'userid' => $userid, 'coursesetid' => '0'));
+        $this->completion = $DB->get_record('prog_completion', array('programid' => $programid,
+                                                                     'userid' => $userid,
+                                                                     'coursesetid' => '0'));
     }
 
     /*
@@ -1370,7 +1352,7 @@ abstract class prog_assignment_completion_type {
     abstract public function get_script();
     abstract public function get_item_name($instanceid);
     abstract public function get_completion_string();
-    abstract public function get_timestamp($userid,$instanceid);
+    abstract public function get_timestamp($userid, $assignobject);
 }
 
 class prog_assigment_completion_first_login extends prog_assignment_completion_type {
@@ -1393,9 +1375,9 @@ class prog_assigment_completion_first_login extends prog_assignment_completion_t
     public function get_completion_string() {
         return get_string('firstlogin', 'totara_program');
     }
-    public function get_timestamp($userid,$instanceid) {
+    public function get_timestamp($userid, $assignobject) {
         global $DB;
-        $rec = $DB->get_record('user', array('id' => $userid),'id, firstaccess, lastaccess');
+        $rec = $DB->get_record('user', array('id' => $userid), 'id, firstaccess, lastaccess');
         $firstaccess = empty($rec->firstaccess) ? $rec->lastaccess : $rec->firstaccess;
 
         return $firstaccess;
@@ -1414,12 +1396,11 @@ class prog_assigment_completion_position_start_date extends prog_assignment_comp
         global $CFG;
 
         return "
-            totaraDialogs['completionevent'].set_to_none();
             totaraDialogs['completionevent'].default_url = '$CFG->wwwroot/totara/program/assignment/completion/find_position.php?';
             totaraDialogs['completionevent'].open();
 
             $('#instancetitle').unbind('click').click(function() {
-                handle_completion_selection(". $this->get_id() .");
+                handle_completion_selection();
                 return false;
             });
         ";
@@ -1427,10 +1408,11 @@ class prog_assigment_completion_position_start_date extends prog_assignment_comp
     private function load_data() {
         global $DB;
         $this->names = $DB->get_records_select('pos', '', null, '', 'id, fullname');
-        $this->timestamps = $DB->get_records_select('prog_pos_assignment', 'type = ?', array(POSITION_TYPE_PRIMARY), '', $DB->sql_concat('userid',"'-'",'positionid') . ' as hash, timeassigned');
+        $this->timestamps = $DB->get_records_select('prog_pos_assignment', 'type = ?', array(POSITION_TYPE_PRIMARY), '',
+            $DB->sql_concat('userid', "'-'", 'positionid') . ' as hash, timeassigned');
     }
     public function get_item_name($instanceid) {
-        // lazy load data when required
+        // Lazy load data when required.
         if (!isset($this->names)) {
             $this->load_data();
         }
@@ -1439,13 +1421,13 @@ class prog_assigment_completion_position_start_date extends prog_assignment_comp
     public function get_completion_string() {
         return get_string('startinposition', 'totara_program');
     }
-    public function get_timestamp($userid,$instanceid) {
-        // lazy load data when required
+    public function get_timestamp($userid, $assignobject) {
+        // Lazy load data when required.
         if (!isset($this->timestamps)) {
             $this->load_data();
         }
-        if (isset($this->timestamps[$userid . '-' . $instanceid])) {
-            return $this->timestamps[$userid . '-' . $instanceid]->timeassigned;
+        if (isset($this->timestamps[$userid . '-' . $assignobject->completioninstance])) {
+            return $this->timestamps[$userid . '-' . $assignobject->completioninstance]->timeassigned;
         }
         return false;
     }
@@ -1463,12 +1445,11 @@ class prog_assigment_completion_program_completion extends prog_assignment_compl
         global $CFG;
 
         return "
-            totaraDialogs['completionevent'].set_to_none();
             totaraDialogs['completionevent'].default_url = '$CFG->wwwroot/totara/program/assignment/completion/find_program.php?';
             totaraDialogs['completionevent'].open();
 
             $('#instancetitle').unbind('click').click(function() {
-                handle_completion_selection(". $this->get_id() .");
+                handle_completion_selection();
                 return false;
             });
 
@@ -1478,11 +1459,12 @@ class prog_assigment_completion_program_completion extends prog_assignment_compl
     private function load_data() {
         global $DB;
         $this->names = $DB->get_records_select('prog', '', null, '', 'id, fullname');
-        //prog_completion records where coursesetid = 0 are the master record for the program as a whole
-        $this->timestamps = $DB->get_records_select('prog_completion', 'coursesetid = 0', null, '', $DB->sql_concat('userid',"'-'",'programid') . ' as hash, timecompleted');
+        // Prog_completion records where coursesetid = 0 are the master record for the program as a whole.
+        $this->timestamps = $DB->get_records_select('prog_completion', 'coursesetid = 0', null, '',
+            $DB->sql_concat('userid', "'-'", 'programid') . ' as hash, timecompleted');
     }
     public function get_item_name($instanceid) {
-        // lazy load data when required
+        // Lazy load data when required.
         if (!isset($this->names)) {
             $this->load_data();
         }
@@ -1491,13 +1473,13 @@ class prog_assigment_completion_program_completion extends prog_assignment_compl
     public function get_completion_string() {
         return get_string('completionofprogram', 'totara_program');
     }
-    public function get_timestamp($userid,$instanceid) {
-        // lazy load data when required
+    public function get_timestamp($userid, $assignobject) {
+        // Lazy load data when required.
         if (!isset($this->timestamps)) {
             $this->load_data();
         }
-        if (isset($this->timestamps[$userid . '-' . $instanceid])) {
-            return $this->timestamps[$userid . '-' . $instanceid]->timecompleted;
+        if (isset($this->timestamps[$userid . '-' . $assignobject->completioninstance])) {
+            return $this->timestamps[$userid . '-' . $assignobject->completioninstance]->timecompleted;
         }
         return false;
     }
@@ -1515,12 +1497,11 @@ class prog_assigment_completion_course_completion extends prog_assignment_comple
         global $CFG;
 
         return "
-            totaraDialogs['completionevent'].set_to_none();
             totaraDialogs['completionevent'].default_url = '$CFG->wwwroot/totara/program/assignment/completion/find_course.php?';
             totaraDialogs['completionevent'].open();
 
             $('#instancetitle').unbind('click').click(function() {
-                handle_completion_selection(". $this->get_id() .");
+                handle_completion_selection();
                 return false;
             });
 
@@ -1530,10 +1511,11 @@ class prog_assigment_completion_course_completion extends prog_assignment_comple
     private function load_data() {
         global $DB;
         $this->names = $DB->get_records_select('course', '', null, '', 'id, fullname');
-        $this->timestamps = $DB->get_records_select('course_completions', '', null, '', $DB->sql_concat('userid',"'-'",'course') . ' as hash, timecompleted');
+        $this->timestamps = $DB->get_records_select('course_completions', '', null, '',
+            $DB->sql_concat('userid', "'-'", 'course') . ' as hash, timecompleted');
     }
     public function get_item_name($instanceid) {
-        // lazy load data when required
+        // Lazy load data when required.
         if (!isset($this->names)) {
             $this->load_data();
         }
@@ -1542,13 +1524,13 @@ class prog_assigment_completion_course_completion extends prog_assignment_comple
     public function get_completion_string() {
         return get_string('completionofcourse', 'totara_program');
     }
-    public function get_timestamp($userid,$instanceid) {
-        // lazy load data when required
+    public function get_timestamp($userid, $assignobject) {
+        // Lazy load data when required.
         if (!isset($this->timestamps)) {
             $this->load_data();
         }
-        if (isset($this->timestamps[$userid . '-' . $instanceid])) {
-            return $this->timestamps[$userid . '-' . $instanceid]->timecompleted;
+        if (isset($this->timestamps[$userid . '-' . $assignobject->completioninstance])) {
+            return $this->timestamps[$userid . '-' . $assignobject->completioninstance]->timecompleted;
         }
         return false;
     }
@@ -1566,12 +1548,11 @@ class prog_assigment_completion_profile_field_date extends prog_assignment_compl
         global $CFG;
 
         return "
-            totaraDialogs['completionevent'].set_to_none();
             totaraDialogs['completionevent'].default_url = '$CFG->wwwroot/totara/program/assignment/completion/find_profile_field.php?';
             totaraDialogs['completionevent'].open();
 
             $('#instancetitle').unbind('click').click(function() {
-                handle_completion_selection(". $this->get_id() .");
+                handle_completion_selection();
                 return false;
             });
         ";
@@ -1579,10 +1560,11 @@ class prog_assigment_completion_profile_field_date extends prog_assignment_compl
     private function load_data() {
         global $DB;
         $this->names = $DB->get_records_select('user_info_field', '', null, '', 'id, name');
-        $this->timestamps = $DB->get_records_select('user_info_data', '', null, '', $DB->sql_concat('userid',"'-'",'fieldid') . ' as hash, data');
+        $this->timestamps = $DB->get_records_select('user_info_data', '', null, '',
+            $DB->sql_concat('userid', "'-'", 'fieldid') . ' as hash, data');
     }
     public function get_item_name($instanceid) {
-        // lazy load data when required
+        // Lazy load data when required.
         if (!isset($this->names)) {
             $this->load_data();
         }
@@ -1591,16 +1573,16 @@ class prog_assigment_completion_profile_field_date extends prog_assignment_compl
     public function get_completion_string() {
         return get_string('dateinprofilefield', 'totara_program');
     }
-    public function get_timestamp($userid,$instanceid) {
-        // lazy load data when required
+    public function get_timestamp($userid, $assignobject) {
+        // Lazy load data when required.
         if (!isset($this->timestamps)) {
             $this->load_data();
         }
-        if (!isset($this->timestamps[$userid . '-' . $instanceid])) {
+        if (!isset($this->timestamps[$userid . '-' . $assignobject->completioninstance])) {
             return false;
         }
 
-        $date = $this->timestamps[$userid . '-' . $instanceid]->data;
+        $date = $this->timestamps[$userid . '-' . $assignobject->completioninstance]->data;
         $date = trim($date);
 
         if (empty($date)) {
@@ -1627,7 +1609,39 @@ class prog_assigment_completion_profile_field_date extends prog_assignment_compl
             return $result;
         }
 
-        // Else we couldn't match a date, so return false
+        // Else we couldn't match a date, so return false.
         return false;
+    }
+}
+
+class prog_assigment_completion_enrollment_date extends prog_assignment_completion_type {
+
+    public function get_id() {
+        return COMPLETION_EVENT_ENROLLMENT_DATE;
+    }
+    public function get_name() {
+        return get_string('programenrollmentdate', 'totara_program');
+    }
+    public function get_script() {
+        return "
+            totaraDialogs['completionevent'].clear();
+        ";
+    }
+    public function get_item_name($instanceid) {
+        return '';
+    }
+    public function get_completion_string() {
+        return get_string('programenrollmentdate', 'totara_program');
+    }
+    public function get_timestamp($userid, $assignobject) {
+        global $DB;
+
+        $date = time();
+        $params = array('userid' => $userid, 'assignmentid' => $assignobject->id);
+        if ($user = $DB->get_record('prog_user_assignment', $params, 'id, timeassigned')) {
+            $date = $user->timeassigned;
+        }
+
+        return $date;
     }
 }

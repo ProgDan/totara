@@ -2,11 +2,11 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -116,13 +116,14 @@ class rb_cohort_members_embedded_cache_test extends reportcache_advanced_testcas
         if ($usecache) {
             $this->enable_caching($this->report_builder_data['id']);
         }
+        $useridalias = reportbuilder_get_extrafield_alias('user', 'namelink', 'user_id');
         $result = $this->get_report_result($this->report_builder_data['shortname'],  array('cohortid' => $this->cohort1->id), $usecache);
         $this->assertCount(2, $result);
         $was = array();
         foreach($result as $r) {
-            $this->assertContains($r->user_id, array($this->users[1]->id, $this->users[4]->id));
-            $this->assertNotContains($r->user_id, $was);
-            $was[] = $r->user_id;
+            $this->assertContains($r->$useridalias, array($this->users[1]->id, $this->users[4]->id));
+            $this->assertNotContains($r->$useridalias, $was);
+            $was[] = $r->$useridalias;
         }
 
         $result = $this->get_report_result($this->report_builder_data['shortname'],  array('cohortid' => $this->cohort2->id), $usecache);
@@ -130,9 +131,9 @@ class rb_cohort_members_embedded_cache_test extends reportcache_advanced_testcas
         $was = array();
         $cohort2ids =  array($this->users[2]->id, $this->users[3]->id, $this->users[4]->id, $this->users[6]->id);
         foreach($result as $r) {
-            $this->assertContains($r->user_id,$cohort2ids);
-            $this->assertNotContains($r->user_id, $was);
-            $was[] = $r->user_id;
+            $this->assertContains($r->$useridalias, $cohort2ids);
+            $this->assertNotContains($r->$useridalias, $was);
+            $was[] = $r->$useridalias;
         }
 
         $result = $this->get_report_result($this->report_builder_data['shortname'],  array('cohortid' => $this->cohort3->id), $usecache);

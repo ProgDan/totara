@@ -1,6 +1,8 @@
 <?php
-/**
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+/*
+ * This file is part of Totara LMS
+ *
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -91,7 +93,20 @@ $available_actions = array();
 $context = context_course::instance($course->id);
 $contextmodule = context_module::instance($cm->id);
 if (!$onlycontent) { // Need to check this for security issues
-    require_login();
+
+    $coursecheck = null;
+    $modulecheck = null;
+    $guestaccess = $DB->get_record('enrol', array('courseid' => $course->id, 'enrol' => 'guest'));
+    if (!empty($guestaccess) && $guestaccess->status === '0') {
+        // Guest access is enabled, we need to check login against the course.
+        $coursecheck = $course;
+        if (!$cm->visible && !has_capability('moodle/course:viewhiddenactivities', $context)) {
+            // The module is hidden, we need to check the users ability to view it.
+            $modulecheck = $cm;
+        }
+    }
+
+    require_login($coursecheck, true, $modulecheck);
 }
 
 $PAGE->set_context($contextmodule);
@@ -231,9 +246,9 @@ if ($action == 'attendees') {
     }
 
     if ($has_attendees) {
-        $actions['exportxls'] = get_string('exportxls', 'totara_reportbuilder');
-        $actions['exportods'] = get_string('exportods', 'totara_reportbuilder');
-        $actions['exportcsv'] = get_string('exportcsv', 'totara_reportbuilder');
+        $actions['exportxls'] = get_string('exportattendancexls', 'facetoface');
+        $actions['exportods'] = get_string('exportattendanceods', 'facetoface');
+        $actions['exportcsv'] = get_string('exportattendancetxt', 'facetoface');
     };
 
     $params['statusgte'] = MDL_F2F_STATUS_BOOKED;
@@ -373,7 +388,7 @@ if ($form = data_submitted()) {
                 }
             }
 
-            // Send messages
+            // Send messages.
             $fromaddress = get_config(NULL, 'facetoface_fromaddress');
             if (!$fromaddress) {
                 $fromaddress = '';
@@ -383,18 +398,18 @@ if ($form = data_submitted()) {
             $emailerrors = 0;
             foreach ($recipients as $recipient) {
                 $body = $data->body['text'];
-                $bodyplain = html_to_text($body['text']);
+                $bodyplain = html_to_text($body);
 
                 if (email_to_user($recipient, $fromaddress, $data->subject, $bodyplain, $body) === true) {
                     $emailcount += 1;
 
-                    // Check if we are sending to managers and if user has a manager assigned
+                    // Check if we are sending to managers and if user has a manager assigned.
                     if (empty($data->cc_managers) || !$manager = totara_get_manager($recipient->id)) {
                         continue;
                     }
 
-                    // Append to message
-                    $body = get_string('messagesenttostaffmember', 'facetoface', fullname($recipient))."\n\n".$data->body;
+                    // Append to message.
+                    $body = get_string('messagesenttostaffmember', 'facetoface', fullname($recipient))."\n\n".$data->body['text'];
                     $bodyplain = html_to_text($body);
 
                     if (email_to_user($manager, $fromaddress, $data->subject, $bodyplain, $body) === true) {
@@ -610,6 +625,8 @@ if ($show_table) {
 
         $headers[] = get_string('name');
         $columns[] = 'name';
+        $headers[] = get_string('timesignedup', 'facetoface');
+        $columns[] = 'timesignedup';
 
         if ($action == 'takeattendance') {
             $headers[] = get_string('currentstatus', 'facetoface');
@@ -619,8 +636,6 @@ if ($show_table) {
                 $columns[] = 'attendedsession';
             }
         } else if ($action == 'cancellations') {
-            $headers[] = get_string('timesignedup', 'facetoface');
-            $columns[] = 'timesignedup';
             $headers[] = get_string('timecancelled', 'facetoface');
             $columns[] = 'timecancelled';
             $headers[] = get_string('cancelreason', 'facetoface');
@@ -652,6 +667,7 @@ if ($show_table) {
             } else {
                 $data[] = html_writer::link($attendee_url, format_string(fullname($attendee)));
             }
+            $data[] = userdate($attendee->timesignedup, get_string('strftimedatetime'));
 
             if ($action == 'takeattendance') {
                 // Show current status
@@ -664,7 +680,6 @@ if ($show_table) {
                     $data[] = $select;
                 }
             } else if ($action == 'cancellations') {
-                $data[] = userdate($attendee->timesignedup, get_string('strftimedatetime'));
                 $data[] = userdate($attendee->timecancelled, get_string('strftimedatetime'));
                 $data[] = isset($attendee->cancelreason) ? format_string($attendee->cancelreason) : get_string('none');
             } else {

@@ -2,11 +2,11 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -82,7 +82,7 @@ class mod_facetoface_notification_form extends moodleform {
             $mform->addElement('html', '<br /><br />');
 
             $group = array();
-            $group[] = $mform->createElement('checkbox', 'booked', get_string('status_booked', 'facetoface'));
+            $group[] = $mform->createElement('advcheckbox', 'booked', get_string('status_booked', 'facetoface'));
             $group[] = $mform->createElement('radio', 'booked_type', '',
                     get_string('recipients_allbooked', 'facetoface'), MDL_F2F_RECIPIENTS_ALLBOOKED);
             $group[] = $mform->createElement('radio', 'booked_type', '',
@@ -90,8 +90,8 @@ class mod_facetoface_notification_form extends moodleform {
             $group[] = $mform->createElement('radio', 'booked_type', '',
                     get_string('recipients_noshowsonly', 'facetoface'), MDL_F2F_RECIPIENTS_NOSHOWS);
 
-            $group[] = $mform->createElement('checkbox', 'waitlisted', get_string('status_waitlisted', 'facetoface'));
-            $group[] = $mform->createElement('checkbox', 'cancelled', get_string('status_user_cancelled', 'facetoface'));
+            $group[] = $mform->createElement('advcheckbox', 'waitlisted', get_string('status_waitlisted', 'facetoface'));
+            $group[] = $mform->createElement('advcheckbox', 'cancelled', get_string('status_user_cancelled', 'facetoface'));
 
             $mform->addGroup($group, 'recipients', get_string('recipients', 'facetoface'), '', false);
 

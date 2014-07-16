@@ -746,7 +746,7 @@ $string['general'] = 'General';
 $string['geolocation'] = 'latitude - longitude';
 $string['gettheselogs'] = 'Get these logs';
 $string['go'] = 'Go';
-$string['gpl'] = 'Copyright (C) 2010-2013 Totara Learning Solutions Ltd (http://www.totaralms.com/)
+$string['gpl'] = 'Copyright (C) 2010 onwards Totara Learning Solutions LTD (http://www.totaralms.com/)
 Copyright (C) 1999 onwards  Martin Dougiamas  (http://moodle.com)
 
 This program is free software; you can redistribute it and/or modify
@@ -761,7 +761,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the Moodle License information page for full details:
 http://docs.moodle.org/dev/License';
 $string['gpllicense'] = 'GPL license';
-$string['gpl3'] = 'Copyright (C) 2010-2013 Totara Learning Solutions Ltd (http://www.totaralms.com/)
+$string['gpl3'] = 'Copyright (C) 2010 onwards Totara Learning Solutions LTD (http://www.totaralms.com/)
 Copyright (C) 1999 onwards Martin Dougiamas (http://moodle.com)
 
 This program is free software: you can redistribute it and/or modify
@@ -1477,7 +1477,12 @@ $string['searchbyemail'] = 'Search by email address';
 $string['searchbyusername'] = 'Search by username';
 $string['searchbyusernameoremail'] = 'Search by username or email address';
 $string['searchcourses'] = 'Search courses';
-$string['searchhelp'] = 'You can search for multiple words at once.<br /><br />word : find any match of this word within the text.<br />+word : only exact matching words will be found.<br />-word : don\'t include results containing this word.';
+$string['searchhelp'] = '<p>You can search for multiple words at once and can refine your search as follows:</p>
+<ul>
+<li>word - find any match of this word within the text.</li>
+<li>+word - only exact matching words will be found.</li>
+<li>-word - don\'t include results containing this word.</li>
+</ul>';
 $string['searchoptions'] = 'Search options';
 $string['searchresults'] = 'Search results';
 $string['sec'] = 'sec';
@@ -1809,7 +1814,9 @@ $string['virusfoundsubject'] = '{$a}: Virus found!';
 $string['virusfounduser'] = 'The file you have uploaded, {$a->filename}, has been scanned by a virus checker and found to be infected! Your file upload was NOT successful.';
 $string['virusplaceholder'] = 'This file that has been uploaded was found to contain a virus and has been moved or deleted and the user notified.';
 $string['visible'] = 'Visible';
-$string['visible_help'] = 'This setting determines whether the course appears in the list of courses. Apart from teachers and administrators, users are not allowed to enter the course.';
+$string['visible_help'] = 'This setting determines whether the course appears in the list of courses. Apart from users granted the \'viewhiddencourse\' capability (course creators, editing trainers, trainers and managers by default), users are not allowed to enter the course, even if enrolled.
+
+This setting allows a course administrator to setup up a course as hidden and assign the learners to it, without the learners being able to see the course. The course administrator can then confirm that the details of the course and the set of assigned learners are correct before making the course visible to the learners at the appropriate time.';
 $string['visibletostudents'] = 'Visible to {$a}';
 $string['warning'] = 'Warning';
 $string['warningdeleteresource'] = 'Warning: {$a} is referred in a resource. Would you like to update the resource?';

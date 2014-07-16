@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -162,7 +162,7 @@ class csv_iterator extends SplFileObject
     private function clean_fields($fields) {
         if (!empty($fields) && is_array($fields)) {
             foreach ($fields as $key => $value) {
-                $value = clean_text(trim($value));
+                $value = html_entity_decode(clean_text(trim($value)), ENT_QUOTES, 'UTF-8');
                 $fields[$key] = textlib::convert($value, $this->encoding, 'utf-8');
             }
         }

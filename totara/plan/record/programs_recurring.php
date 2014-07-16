@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,14 +29,15 @@ require_once($CFG->dirroot.'/totara/plan/lib.php');
 
 require_login();
 
-global $SESSION,$USER;
+global $USER;
 
 $programid  = optional_param('programid', 0, PARAM_INT);                       // which program to show
 $userid     = optional_param('userid', null, PARAM_INT);                  // which user to show
 $sid = optional_param('sid', '0', PARAM_INT);
 $format = optional_param('format','', PARAM_TEXT); // export format
 $rolstatus = optional_param('status', 'all', PARAM_ALPHANUM);
-// instantiate the program instance
+
+// Instantiate the program instance.
 if ($programid) {
     try {
         $program = new program($programid);
@@ -44,13 +45,13 @@ if ($programid) {
         print_error('error:invalidid', 'totara_program');
     }
 } else {
-    // show all recurring programs if no id given
-    // needed to fix link from manage report page
+    // Show all recurring programs if no id given.
+    // Needed to fix link from manage report page.
     $program = new stdClass();
     $program->fullname = '';
 }
 
-// default to current user
+// Default to current user.
 if (empty($userid)) {
     $userid = $USER->id;
 }
@@ -60,8 +61,8 @@ if (!$user = $DB->get_record('user', array('id' => $userid))) {
 }
 
 $context = context_system::instance();
-// users can only view their own and their staff's pages
-// or if they are an admin
+// Users can only view their own and their staff's pages.
+// Or if they are admin.
 if ($USER->id != $userid && !totara_is_manager($userid) && !has_capability('totara/plan:accessanyplan',$context)) {
     print_error('error:cannotviewpage', 'totara_plan');
 }
@@ -81,7 +82,7 @@ if ($USER->id != $userid) {
 } else {
     $strheading = get_string('recurringprogramhistory', 'totara_program', format_string($program->fullname));
 }
-// get subheading name for display
+// Get subheading name for display.
 $strsubheading = get_string('recurringprograms', 'totara_program');
 
 $shortname = 'plan_programs_recurring';
@@ -129,8 +130,6 @@ echo $OUTPUT->heading($strheading, 1);
 $currenttab = 'programs';
 dp_print_rol_tabs($rolstatus, $currenttab, $userid);
 
-// display table here
-$fullname = $report->fullname;
 $countfiltered = $report->get_filtered_count();
 $countall = $report->get_full_count();
 
@@ -144,12 +143,12 @@ $report->display_search();
 // Print saved search buttons if appropriate.
 echo $report->display_saved_search_options();
 
-if ($countfiltered > 0) {
-    echo $renderer->showhide_button($report->_id, $report->shortname);
-    $report->display_table();
-    // export button
-    $renderer->export_select($report->_id, $sid);
-}
+echo $renderer->showhide_button($report->_id, $report->shortname);
+
+$report->display_table();
+
+// Export button.
+$renderer->export_select($report->_id, $sid);
 
 echo $OUTPUT->container_end();
 echo $OUTPUT->footer();

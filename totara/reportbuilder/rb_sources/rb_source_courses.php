@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  * Copyright (C) 1999 onwards Martin Dougiamas
  *
  * This program is free software; you can redistribute it and/or modify
@@ -217,11 +217,18 @@ class rb_source_courses extends rb_base_source {
 
 
     public function post_config(reportbuilder $report) {
-        global $CFG;
+        // Don't include the front page (site-level course).
+        $this->requiredcolumns[] = new rb_column(
+            'base',
+            'category',
+            '',
+            "base.category"
+        );
 
-        // ID of the user the report is for.
-        $reportfor = $report->reportfor;
+        $categorysql = $report->get_field('base', 'category', 'base.category') . " <> :sitelevelcategory";
+        $categoryparams = array('sitelevelcategory' => 0);
 
+        // Visibility.
         $this->requiredcolumns[] = new rb_column(
             'base',
             'visible',
@@ -235,50 +242,16 @@ class rb_source_courses extends rb_base_source {
             "base.audiencevisible"
         );
 
-        // Admins can see all records no matter what the visibility.
-        if (is_siteadmin()) {
-            return;
-        }
-
+        $reportfor = $report->reportfor; // ID of the user the report is for.
+        $fieldbaseid = $report->get_field('base', 'id', 'base.id');
         $fieldvisible = $report->get_field('base', 'visible', 'base.visible');
         $fieldaudvis = $report->get_field('base', 'audiencevisible', 'base.audiencevisible');
-        $fieldbaseid = $report->get_field('base', 'id', 'base.id');
+        list($visiblesql, $visibleparams) = totara_visibility_where($reportfor,
+                $fieldbaseid, $fieldvisible, $fieldaudvis);
 
-        if (empty($CFG->audiencevisibility)) {
-            // Normal course visibility.
-            $sql = "{$fieldvisible} = :normalvisible";
-            $params = array('normalvisible' => 1);
-            $restrictions = array($sql, $params);
-            $report->set_post_config_restrictions($restrictions);
-        } else {
-            // Audience visibility all.
-            $sqlall = "{$fieldaudvis} = :audvisall";
-            $paramsall = array('audvisall' => COHORT_VISIBLE_ALL);
-
-            // Audience visibility selected.
-            $instancetype = COHORT_ASSN_ITEMTYPE_COURSE;
-            $sqlselected = "({$fieldaudvis} = :audvisaud AND
-                     EXISTS (SELECT 1
-                               FROM {cohort_visibility} cv
-                               JOIN {cohort_members} cm ON cv.cohortid = cm.cohortid
-                              WHERE cv.instanceid = {$fieldbaseid}
-                                AND cv.instancetype = :instancetypeselected
-                                AND cm.userid = :reportforselected))";
-            $paramsselected = array('audvisaud' => COHORT_VISIBLE_AUDIENCE, 'instancetypeselected' => $instancetype,
-                    'reportforselected' => $reportfor);
-
-            // Enrolled users.
-            $sqlenrolled = "EXISTS (SELECT 1
-                                      FROM {user_enrolments} ue
-                                      JOIN {enrol} e ON e.id = ue.enrolid
-                                     WHERE e.courseid = {$fieldbaseid}
-                                       AND ue.userid = :reportforenrolled)";
-            $paramsenrolled = array('reportforenrolled' => $reportfor);
-
-            $restrictions = array("({$sqlall} OR {$sqlselected} OR {$sqlenrolled})",
-                    array_merge($paramsall, $paramsselected, $paramsenrolled));
-            $report->set_post_config_restrictions($restrictions);
-        }
+        // Combine the results.
+        $report->set_post_config_restrictions(array($categorysql . " AND " . $visiblesql,
+            array_merge($categoryparams, $visibleparams)));
     }
 
 } // End of rb_source_courses class.

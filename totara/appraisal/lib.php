@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -309,7 +309,9 @@ class appraisal {
      * @return $err Array Array of error strings to combine with any existing errors
      */
     public function validate_roles() {
-        global $DB;
+        global $DB, $CFG;
+        require_once($CFG->dirroot . '/totara/hierarchy/prefix/position/lib.php');
+
         if (!defined('APPRAISAL_VALIDATION_MAX_BAD_ROLES')) {
             define('APPRAISAL_VALIDATION_MAX_BAD_ROLES', 500);
         }
@@ -336,12 +338,15 @@ class appraisal {
 
         $from = " FROM {user} u
             LEFT JOIN {pos_assignment} pa
-                ON u.id = pa.userid
+                ON (u.id = pa.userid AND pa.type = ?)
             LEFT JOIN {pos_assignment} pa2
-                ON pa.managerid = pa2.userid";
+                ON (pa.managerid = pa2.userid AND pa2.type = ?)";
+        $params = array(POSITION_TYPE_PRIMARY, POSITION_TYPE_PRIMARY);
 
         // Get SQL to limit to only users involved in this appraisal.
-        list($joinsql, $params) = $assign->get_users_from_groups_sql('u', 'id');
+        list($joinsql, $joinparams) = $assign->get_users_from_groups_sql('u', 'id');
+
+        $params = array_merge($params, $joinparams);
 
         // Only get rows that are missing data if we require that role.
         $allroles = $this->get_roles();
@@ -3286,7 +3291,8 @@ class appraisal_question extends question_storage {
      * @param array $otherassignments
      * @return bool user's role can answer on this question
      */
-    public function populate_roles_element(appraisal_role_assignment $roleassignment, $otherassignments) {
+    public function populate_roles_element(appraisal_role_assignment $roleassignment,
+            $otherassignments, $nouserpic = false) {
         global $OUTPUT, $DB;
         $questroles = $this->roles;
         unset($questroles[$roleassignment->appraisalrole]);
@@ -3301,7 +3307,11 @@ class appraisal_question extends question_storage {
                 // Add information about other roles to element.
                 $questioninfo = new question_manager($subject->id, $otherassignments[$eachrole]->id);
                 $questioninfo->viewonly = true;
-                $questioninfo->userimage = $OUTPUT->user_picture($subject);
+                if (!$nouserpic) {
+                    $questioninfo->userimage = $OUTPUT->user_picture($subject);
+                } else {
+                   $questioninfo->userimage = '';
+                }
                 $questioninfo->label = get_string('role_answer_' . $rolecodestrings[$eachrole], 'totara_appraisal');
                 $this->get_element()->add_question_role_info($eachrole, $questioninfo);
             }

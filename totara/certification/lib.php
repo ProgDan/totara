@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -130,7 +130,13 @@ function program_unassigned_handler($eventdata) {
     $prog = $DB->get_record('prog', array('id' => $eventdata->programid));
 
     if ($prog->certifid) {
-        $DB->delete_records('certif_completion', array('certifid' => $prog->certifid, 'userid' => $eventdata->userid));
+        $params = array('certifid' => $prog->certifid, 'userid' => $eventdata->userid);
+        if ($completionrecord = $DB->get_record('certif_completion', $params)) {
+            if (!in_array($completionrecord->status, array(CERTIFSTATUS_UNSET, CERTIFSTATUS_ASSIGNED))) {
+                copy_certif_completion_to_hist($prog->certifid, $eventdata->userid, true);
+            }
+            $DB->delete_records('certif_completion', $params);
+        }
     }
 }
 
@@ -455,7 +461,7 @@ function write_certif_completion($certificationid, $userid, $certificationpath =
     $todb->userid = $userid;
     $todb->renewalstatus = $renewalstatus;
     $todb->certifpath = $certificationpath;
-    if ($certificationpath == CERTIFPATH_RECERT) {
+    if ($certificationpath == CERTIFPATH_RECERT) { // Recertifying.
         $todb->status = CERTIFSTATUS_COMPLETED;
         $lastcompleted = certif_get_content_completion_time($certificationid, $userid);
         // If no courses completed, maintain default behaviour.
@@ -478,7 +484,7 @@ function write_certif_completion($certificationid, $userid, $certificationpath =
         $todb->timeexpires = get_timeexpires($base, $certification->activeperiod);
         $todb->timewindowopens = get_timewindowopens($todb->timeexpires, $certification->windowperiod);
         $todb->timecompleted = $lastcompleted;
-    } else { // CERT.
+    } else { // Certifying.
         $todb->status =  CERTIFSTATUS_ASSIGNED;
         // Window/expires not relevant for CERTIFPATH_CERT as should be doing in program 'due' time.
         $todb->timewindowopens = 0;
@@ -501,9 +507,10 @@ function write_certif_completion($certificationid, $userid, $certificationpath =
  *
  * @param integer $certificationid
  * @param integer $userid
+ * @param bool $unassigned
  * @return boolean
  */
-function copy_certif_completion_to_hist($certificationid, $userid) {
+function copy_certif_completion_to_hist($certificationid, $userid, $unassigned = false) {
     global $DB;
 
     $certificationcompletion = $DB->get_record('certif_completion', array('certifid' => $certificationid, 'userid' => $userid));
@@ -512,9 +519,8 @@ function copy_certif_completion_to_hist($certificationid, $userid) {
         print_error('error:incorrectid', 'totara_certification');
     }
 
-    // Its possible to get an insert error after unassigning an individual from a certification, then reassigning them
-    // so check & Update if present.
     $certificationcompletion->timemodified = time();
+    $certificationcompletion->unassigned = $unassigned;
     $completionhistory = $DB->get_record('certif_completion_history',
             array('certifid' => $certificationid, 'userid' => $userid, 'timeexpires' => $certificationcompletion->timeexpires));
     if ($completionhistory) {

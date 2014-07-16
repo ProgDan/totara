@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1347,43 +1347,71 @@ class goal extends hierarchy {
     }
 
     /**
-     * Check if the current user can update goals for the specified user
+     * Returns a users goal permissions within a specified user_context,
+     * use extract on the page calling this to cache the permissions on the page.
      *
-     * @param int $userid user id of the target
-     * @param int $scope
-     * @return boolean
+     * @param context $context don't ever really need this, just here to match the hierarchy one.
+     * @param int $user The user id of the context to check the permissions in
+     *
+     * @return array()  ->can_view_personal
+     *                  ->can_edit_personal
+     *                  ->can_view_company
+     *                  ->can_edit_company
+     *                  ->can_edit
      */
-    public static function can_update_goals($userid, $scope) {
+    public function get_permissions($context = null, $user = null) {
         global $USER;
 
-        if (!isloggedin()) {
-            return false;
+        $permissions = parent::get_permissions($context, $user);
+
+        // Plus all the extra goals permissions.
+        if (!empty($user)) {
+            $userid = is_object($user) ? $user->id : $user;
+            $context = context_user::instance($userid);
+            $syscontext = context_system::instance();
+
+            // Set up permissions checks so we don't have to do them everytime.
+            if (has_capability('totara/hierarchy:managegoalassignments', $syscontext)) {
+                // Admin permissions, can do anything with this one permission.
+                $permissions['can_view_personal'] = true;
+                $permissions['can_edit_personal'] = true;
+                $permissions['can_view_company'] = true;
+                $permissions['can_edit_company'] = true;
+                $permissions['can_edit'] = array(
+                    GOAL_ASSIGNMENT_INDIVIDUAL => true,
+                    GOAL_ASSIGNMENT_SELF => true,
+                    GOAL_ASSIGNMENT_MANAGER => true,
+                    GOAL_ASSIGNMENT_ADMIN => true,
+                );
+            } else if (totara_is_manager($userid)) {
+                // Manager permissions.
+                $permissions['can_view_personal'] = has_capability('totara/hierarchy:viewstaffpersonalgoal', $context);
+                $permissions['can_edit_personal'] = has_capability('totara/hierarchy:managestaffpersonalgoal', $context);
+                $permissions['can_view_company'] = has_capability('totara/hierarchy:viewstaffcompanygoal', $context);
+                $permissions['can_edit_company'] = has_capability('totara/hierarchy:managestaffcompanygoal', $context);
+                $permissions['can_edit'] = array(
+                    GOAL_ASSIGNMENT_INDIVIDUAL => $permissions['can_edit_company'],
+                    GOAL_ASSIGNMENT_SELF => $permissions['can_edit_personal'],
+                    GOAL_ASSIGNMENT_MANAGER => $permissions['can_edit_personal'],
+                    GOAL_ASSIGNMENT_ADMIN => false,
+                );
+            } else if ($userid == $USER->id) {
+                // User permissions.
+                $permissions['can_view_personal'] = has_capability('totara/hierarchy:viewownpersonalgoal', $context);
+                $permissions['can_edit_personal'] = has_capability('totara/hierarchy:manageownpersonalgoal', $context);
+                $permissions['can_view_company'] = has_capability('totara/hierarchy:viewowncompanygoal', $context);
+                $permissions['can_edit_company'] = has_capability('totara/hierarchy:manageowncompanygoal', $context);
+                $permissions['can_edit'] = array(
+                    GOAL_ASSIGNMENT_INDIVIDUAL => $permissions['can_edit_company'],
+                    GOAL_ASSIGNMENT_SELF => $permissions['can_edit_personal'],
+                    GOAL_ASSIGNMENT_MANAGER => false,
+                    GOAL_ASSIGNMENT_ADMIN => false,
+                );
+            } else {
+                return false;
+            }
         }
 
-        $systemcontext = context_system::instance();
-
-        if (has_capability("totara/hierarchy:managegoalassignments", $systemcontext)) {
-            return true;
-        }
-
-        $usercontext = context_user::instance($userid);
-
-        if ($scope == self::SCOPE_COMPANY) {
-            $type = 'company';
-        } else if ($scope == self::SCOPE_PERSONAL) {
-            $type = 'personal';
-        }
-
-        // Check if they have manager permissions.
-        if (totara_is_manager($userid) && has_capability("totara/hierarchy:managestaff{$type}goal", $usercontext)) {
-            return true;
-        }
-
-        // Check if they have self management permissions.
-        if ($userid == $USER->id && has_capability("totara/hierarchy:manageown{$type}goal", $usercontext)) {
-            return true;
-        }
-
-        return false;
+        return $permissions;
     }
 }

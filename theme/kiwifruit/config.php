@@ -1,9 +1,8 @@
 <?php
-
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,9 +20,6 @@
  * @author Paul Walker <paul.walker@catalyst-eu.net>
  * @package totara
  * @subpackage theme
- *
- * @copyright Totara Learning Solutions Ltd
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 $THEME->name = 'kiwifruit';

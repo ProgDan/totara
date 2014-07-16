@@ -1627,7 +1627,20 @@ abstract class admin_setting {
             rebuild_course_cache(0, true);
         }
 
-        // log change
+        $this->add_to_config_log($name, $oldvalue, $value);
+
+        return true; // BC only
+    }
+
+    /**
+     * Log config changes if necessary.
+     * @param string $name
+     * @param string $oldvalue
+     * @param string $value
+     */
+    protected function add_to_config_log($name, $oldvalue, $value) {
+        global $DB, $USER;
+
         $log = new stdClass();
         $log->userid       = during_initial_install() ? 0 :$USER->id; // 0 as user id during install
         $log->timemodified = time();
@@ -1636,8 +1649,6 @@ abstract class admin_setting {
         $log->value        = $value;
         $log->oldvalue     = $oldvalue;
         $DB->insert_record('config_log', $log);
-
-        return true; // BC only
     }
 
     /**
@@ -2013,6 +2024,22 @@ class admin_setting_configpasswordunmask extends admin_setting_configtext {
     }
 
     /**
+     * Log config changes if necessary.
+     * @param string $name
+     * @param string $oldvalue
+     * @param string $value
+     */
+    protected function add_to_config_log($name, $oldvalue, $value) {
+        if ($value !== '') {
+            $value = '********';
+        }
+        if ($oldvalue !== '' and $oldvalue !== null) {
+            $oldvalue = '********';
+        }
+        parent::add_to_config_log($name, $oldvalue, $value);
+    }
+
+    /**
      * Returns XHTML for the field
      * Writes Javascript into the HTML below right before the last div
      *
@@ -2089,6 +2116,7 @@ class admin_setting_configfile extends admin_setting_configtext {
      * @return string XHTML field
      */
     public function output_html($data, $query='') {
+        global $CFG;
         $default = $this->get_defaultsetting();
 
         if ($data) {
@@ -2100,9 +2128,13 @@ class admin_setting_configfile extends admin_setting_configtext {
         } else {
             $executable = '';
         }
-
+        $disabled = '';
+        if (!empty($CFG->preventexecpath)) {
+            $this->visiblename .= '<div class="form-overridden">'.get_string('execpathnotallowed', 'admin').'</div>';
+            $disabled = ' disabled ';
+        }
         return format_admin_setting($this, $this->visiblename,
-        '<div class="form-file defaultsnext"><input type="text" size="'.$this->size.'" id="'.$this->get_id().'" name="'.$this->get_full_name().'" value="'.s($data).'" />'.$executable.'</div>',
+        '<div class="form-file defaultsnext"><input ' . $disabled . ' type="text" size="'.$this->size.'" id="'.$this->get_id().'" name="'.$this->get_full_name().'" value="'.s($data).'" />'.$executable.'</div>',
         $this->description, true, '', $default, $query);
     }
     /**
@@ -2145,12 +2177,14 @@ class admin_setting_configexecutable extends admin_setting_configfile {
         } else {
             $executable = '';
         }
+        $disabled = '';
         if (!empty($CFG->preventexecpath)) {
-            $this->visiblename .= '<div class="form-overridden">'.get_string('execpathnotallowed', 'admin').'</div>';
+            $this->visiblename .= '<div class="form-overridden">'.get_string('execpathnotallowed', 'totara_core').'</div>';
+            $disabled = ' disabled ';
         }
 
         return format_admin_setting($this, $this->visiblename,
-        '<div class="form-file defaultsnext"><input type="text" size="'.$this->size.'" id="'.$this->get_id().'" name="'.$this->get_full_name().'" value="'.s($data).'" />'.$executable.'</div>',
+        '<div class="form-file defaultsnext"><input ' . $disabled . ' type="text" size="'.$this->size.'" id="'.$this->get_id().'" name="'.$this->get_full_name().'" value="'.s($data).'" />'.$executable.'</div>',
         $this->description, true, '', $default, $query);
     }
 }
@@ -6617,7 +6651,8 @@ function admin_search_settings_html($query) {
  * @return array
  */
 function admin_output_new_settings_by_page($node) {
-    global $OUTPUT;
+    global $OUTPUT, $CFG;
+    $totaracoreinstall = isset($CFG->totaracoreinstallation) ? $CFG->totaracoreinstallation : 0;
     $return = array();
 
     if ($node instanceof admin_category) {
@@ -6629,6 +6664,11 @@ function admin_output_new_settings_by_page($node) {
     } else if ($node instanceof admin_settingpage) {
             $newsettings = array();
             foreach ($node->settings as $setting) {
+                // Always show enablecompletion after a Totara install.
+                if($totaracoreinstall && $setting->name == 'enablecompletion') {
+                    $newsettings[] = $setting;
+                }
+
                 if (is_null($setting->get_setting())) {
                     $newsettings[] = $setting;
                 }

@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,6 @@ $format    = optional_param('format', '', PARAM_TEXT);
 $id = required_param('id', PARAM_INT);
 $sid = optional_param('sid', '0', PARAM_INT);
 $debug = optional_param('debug', 0, PARAM_INT);
-$searched = optional_param_array('submitgroup', array(), PARAM_ALPHANUM);
 
 require_login();
 
@@ -76,15 +75,8 @@ $report->include_js();
 $graph = (substr($report->source, 0, strlen('graphical_feedback_questions')) ==
     'graphical_feedback_questions');
 
-$override_initial = isset($searched['addfilter']);
-$hide_initial_display = ($report->initialdisplay == RB_INITIAL_DISPLAY_HIDE && !$override_initial);
-$countfiltered = 0;
-$countall = 0;
-
-if (!$hide_initial_display || $report->is_report_filtered()) {
-    $countfiltered = $report->get_filtered_count();
-    $countall = $report->get_full_count();
-}
+$countfiltered = $report->get_filtered_count();
+$countall = $report->get_full_count();
 
 $fullname = format_string($report->fullname);
 $pagetitle = format_string(get_string('report', 'totara_reportbuilder').': '.$fullname);
@@ -121,24 +113,16 @@ $report->display_search();
 // print saved search buttons if appropriate
 echo $report->display_saved_search_options();
 
-// show results
-if ($countfiltered > 0) {
-    if ($graph) {
-        print $report->print_feedback_results();
-    } else {
-        echo $output->showhide_button($report->_id, $report->shortname);
-        $report->display_table();
-    }
-    // export button
-    $output->export_select($report->_id, $sid);
-} else if ($hide_initial_display) {
-    echo $output->box_start();
-    print get_string('initialdisplay_pending', 'totara_reportbuilder');
-    echo $output->box_end();
+// Show results.
+if ($graph) {
+    print $report->print_feedback_results();
 } else {
-    echo $output->box_start();
-    print get_string('noresultsfound', 'totara_reportbuilder');
-    echo $output->box_end();
+    echo $output->showhide_button($report->_id, $report->shortname);
+    $report->display_table();
 }
+
+// Export button.
+$output->export_select($report->_id, $sid);
+
 echo $output->footer();
 

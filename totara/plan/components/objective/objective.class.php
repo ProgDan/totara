@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -244,13 +244,14 @@ class dp_objective_component extends dp_base_component {
                 TOTARA_JS_TREEVIEW
             ));
             $component_name = required_param('c', PARAM_ALPHA);
+            $paginated = optional_param('page', 0, PARAM_INT);
             $sesskey = sesskey();
 
             $jsmodule = array(
                             'name' => 'totara_plan_component',
                             'fullpath' => '/totara/plan/component.js',
                             'requires' => array('json'));
-            $PAGE->requires->js_init_call('M.totara_plan_component.init', array('args' => '{"plan_id":'.$this->plan->id.', "component_name":"'.$component_name.'", "sesskey":"'.$sesskey.'"}'), false, $jsmodule);
+            $PAGE->requires->js_init_call('M.totara_plan_component.init', array('args' => '{"plan_id":'.$this->plan->id.', "page":"'.$paginated.'", "component_name":"'.$component_name.'", "sesskey":"'.$sesskey.'"}'), false, $jsmodule);
 
         }
     }

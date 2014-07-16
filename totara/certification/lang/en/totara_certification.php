@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -150,5 +150,8 @@ $string['type_unset'] = 'Unset';
 $string['unset'] = 'Unset';
 $string['viewallcertifications'] = 'View all certifications';
 $string['weeks'] = 'Week(s)';
+$string['windowopen'] = 'Open';
+$string['windowopenin1day'] = 'Opens in 1 day';
+$string['windowopeninxdays'] = 'Opens in {$a} days';
 $string['years'] = 'Year(s)';
 $string['youhaveunsavedchanges'] = 'You have unsaved changes.';

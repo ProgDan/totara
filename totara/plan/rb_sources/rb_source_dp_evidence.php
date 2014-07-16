@@ -3,11 +3,11 @@
  *
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -102,6 +102,9 @@ class rb_source_dp_evidence extends rb_base_source {
         require_once($CFG->dirroot . '/totara/reportbuilder/classes/rb_join.php');
 
         $this->add_user_table_to_joinlist($joinlist, 'base', 'userid');
+        $this->add_position_tables_to_joinlist($joinlist, 'base', 'userid');
+        $this->add_manager_tables_to_joinlist($joinlist, 'position_assignment', 'reportstoid');
+        $this->add_cohort_user_tables_to_joinlist($joinlist, 'base', 'userid');
 
         return $joinlist;
     }
@@ -229,6 +232,9 @@ class rb_source_dp_evidence extends rb_base_source {
         );
 
         $this->add_user_fields_to_columns($columnoptions);
+        $this->add_position_fields_to_columns($columnoptions);
+        $this->add_manager_fields_to_columns($columnoptions);
+        $this->add_cohort_user_fields_to_columns($columnoptions);
 
         return $columnoptions;
     }
@@ -265,6 +271,9 @@ class rb_source_dp_evidence extends rb_base_source {
         );
 
         $this->add_user_fields_to_filters($filteroptions);
+        $this->add_position_fields_to_filters($filteroptions);
+        $this->add_manager_fields_to_filters($filteroptions);
+        $this->add_cohort_user_fields_to_filters($filteroptions);
 
         return $filteroptions;
     }

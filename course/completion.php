@@ -186,6 +186,16 @@ if ($form->is_cancelled()) {
     // Log changes.
     add_to_log($course->id, 'course', 'completion updated', 'completion.php?id='.$course->id);
 
+    // If any criteria created, bulk start users
+    completion_start_user_bulk($course->id);
+
+    // Trigger criteria change event
+    $eventdata = new stdClass();
+    $eventdata->component    = 'completion';
+    $eventdata->course       = $course;
+    $eventdata->startonenrol = !empty($course->completionstartonenrol);
+    events_trigger('completion_criteria_change', $eventdata);
+
     // Redirect to the course main page.
     $url = new moodle_url('/course/view.php', array('id' => $course->id));
     redirect($url);

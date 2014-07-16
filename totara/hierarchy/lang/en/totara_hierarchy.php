@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -142,7 +142,7 @@ $string['clicktoassigngoal'] = 'Click the assign button to select a goal.';
 $string['clicktoassigntemplate'] = 'Click the assign button to select a competency template.';
 $string['clicktoviewchildren'] = 'Click competency name to view child competencies (if present).';
 $string['clicktoviewchildrengoal'] = 'Click goal name to view child goals (if present).';
-$string['cohortnotfound'] = 'Cohort does not exist';
+$string['cohortnotfound'] = 'Audience does not exist';
 $string['companygoal'] = 'Company Goal';
 $string['companygoaldetails'] = 'View Goal Frameworks';
 $string['companygoals'] = 'Company Goals';
@@ -329,6 +329,7 @@ $string['competencyupdatedframework'] = 'The competency framework "{$a}" has bee
 $string['competencyupdatetype'] = 'The competency type "{$a}" has been updated';
 $string['competent'] = 'Competent';
 $string['competentwithsupervision'] = 'Competent with supervision';
+$string['configenablegoals'] = 'If not checked, navigation links to Goals will not be shown';
 $string['confirmmoveitems'] = 'Are you sure you want to move {$a->num} {$a->items} into "{$a->parentname}"?<br /><br />Any children of the {$a->items} being moved will also be relocated at the same time.';
 $string['confirmpersonaldelete'] = 'Are you sure you want to delete {$a->username}\'s personal goal {$a->goalname}';
 $string['confirmproceed'] = 'Are you sure you want to proceed?';
@@ -396,6 +397,7 @@ $string['editposition'] = 'Edit position';
 $string['editscalevalue'] = 'Edit scale value';
 $string['edittype'] = 'Edit type';
 $string['edittypelevel'] = 'Edit type';
+$string['enablegoals'] = 'Show Goals';
 $string['enternamesoneperline'] = 'Enter {$a} names (one per line)';
 $string['entervaliddate'] = 'Enter a valid date';
 $string['error:addcompetency'] = 'There was a problem adding the competency "{$a}"';
@@ -539,17 +541,17 @@ This will remove the following data: <br />
 $string['goaldeletedassignment'] = 'Successfuly deleted goal assignment';
 $string['goaldeletedframework'] = 'The goal framework "{$a}" and its data have been completely deleted.';
 $string['goaldeletedtype'] = 'The goal type "{$a}" has been completely deleted.';
-$string['goaldeletemulticheckwithchildren'] = 'Are you sure you want to delete {$a->num} goal/goals and {$a->childcount} {$a->children_string}?
+$string['goaldeletemulticheckwithchildren'] = 'Are you sure you want to delete {$a->num} goal(s) and {$a->childcount} {$a->children_string}?
 <br /><br />
 This will remove the following data: <br />
 - The {$a->num} goal/goals and {$a->childcount} {$a->children_string}';
 $string['goaldepthcustomfields'] = 'Goal depth custom fields';
 $string['goaldepthlevelview'] = 'Goal depth level view';
 $string['goaldescription'] = 'Description';
-$string['goaldescription_help'] = 'A free-text field for providing more details about this goal. This data is displayed when viewing the hieararchy listing, and the individual goal page.';
+$string['goaldescription_help'] = 'A free-text field for providing more details about this goal. This data is displayed when viewing the hierarchy listing, and the individual goal page.';
 $string['goaldetails'] = 'Goal Details';
 $string['goaleditframework'] = 'Edit goal framework';
-$string['goalerror:createtype'] = 'Error creating completency type "{$a}"';
+$string['goalerror:createtype'] = 'Error creating goal type "{$a}"';
 $string['goalerror:deletedframework'] = 'Error deleting goal framework "{$a}" and its data.';
 $string['goalerror:deletedtype'] = 'Error deleting goal type "{$a}".';
 $string['goalerror:dialognotreeitems'] = 'No goals in this framework';
@@ -564,7 +566,7 @@ The pulldown lists all moodle users who are in the assessor role. If the user yo
 $string['goalevidenceassessorname'] = 'Evidence Assessor Name';
 $string['goalevidenceassessorname_help'] = 'The Assessor Name field refers to the name of the organisation that did the assessment of the user for this goal. It is an optional field so can be left blank.';
 $string['goalevidencegoal'] = 'Evidence Goal';
-$string['goalevidencegoal_help'] = 'The goal to be assigned to the user. If you are editing an existing item of goal evidence, this cannot be changed. You can however create a new item of goal evidence (if you have permission to do so) by visiting the user\'s My Records page and clicking the \'Add goalevidence\' button.
+$string['goalevidencegoal_help'] = 'The goal to be assigned to the user. If you are editing an existing item of goal evidence, this cannot be changed. You can however create a new item of goal evidence (if you have permission to do so) by visiting the user\'s My Records page and clicking the \'Add goal evidence\' button.
 
 When creating a new goal evidence item you can choose between adding evidence for an existing goal or creating a new goal. If you choose \'Select a goal\' a popup will allow you to pick from the existing goals. If you choose \'Create a new goal\' a form will appear where you can choose a framework and define the new goal.
 
@@ -702,7 +704,7 @@ $string['goaltemplategeneral_help'] = 'A **Goal Template** is a way of grouping 
 When setting up a training event, for example an induction course, this could be linked to a goal template called \'new employee goals\'; drawing automatically on a number of goals, instead of repeatedly selecting the goals one by one.';
 $string['goaltemplatemanage'] = 'Manage templates';
 $string['goaltemplates'] = 'Goal templates';
-$string['goaltemplateshortname_help'] = 'emplate short name is a quick reference name for the goal template and can be used for display purposes.';
+$string['goaltemplateshortname_help'] = 'Template short name is a quick reference name for the goal template and can be used for display purposes.';
 $string['goaltype'] = 'Type';
 $string['goaltype_help'] = 'Administrators can create and assign types of goals. If a goal is assigned a type it inherits any custom fields that have been assigned to that type. This allows you to organise meta-data relating to your goals and only show the fields that each sort of goal needs.';
 $string['goaltypecustomfields'] = 'Goal type custom fields';

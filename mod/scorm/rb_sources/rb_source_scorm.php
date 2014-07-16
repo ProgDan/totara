@@ -285,10 +285,16 @@ class rb_source_scorm extends rb_base_source {
 
         $contentoptions = array(
             new rb_content_option(
-                'current_org',                      // class name
-                get_string('currentorg', 'rb_source_scorm'),  // title
-                'organisation.path',                // field
-                'organisation'                      // joins
+                'current_pos',
+                get_string('currentpos', 'totara_reportbuilder'),
+                'position.path',
+                'position'
+            ),
+            new rb_content_option(
+                'current_org',
+                get_string('currentorg', 'totara_reportbuilder'),
+                'organisation.path',
+                'organisation'
             ),
             new rb_content_option(
                 'user',

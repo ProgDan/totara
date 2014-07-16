@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@ $string['anyofthefollowing'] = 'Any of the following';
 $string['ascending'] = 'Ascending (A to Z, 1 to 9)';
 $string['assignedactivities'] = 'Assigned activities';
 $string['at'] = 'at';
+$string['audiencevisibility'] = 'Audience Visibility';
 $string['backtoallgroups'] = 'Back to all groups';
 $string['badcolumns'] = 'Invalid columns';
 $string['badcolumnsdesc'] = 'The following columns have been included in this report, but do not exist in the report\'s source. This can occur if the source changes on disk after reports have been generated. To fix, either restore the previous source file, or delete the columns from this report.';
@@ -119,6 +120,8 @@ $string['createasavedsearch'] = 'Create a saved search';
 $string['createreport'] = 'Create report';
 $string['csvformat'] = 'text format';
 $string['currentfinancial'] = 'The current financial year';
+$string['currentorg'] = 'The user\'s current organisation';
+$string['currentpos'] = 'The user\'s current position';
 $string['currentorgenable'] = 'Show records from staff in the user\'s organisation';
 $string['currentposenable'] = 'Show records from staff in the user\'s position';
 $string['currentsearchparams'] = 'Settings to be saved';
@@ -696,6 +699,8 @@ $string['type_user'] = 'User';
 $string['type_user_profile'] = 'User Profile';
 $string['uniquename'] = 'Unique Name';
 $string['unknown'] = 'Unknown';
+$string['unknownlanguage'] = 'Unknown Language ({$a})';
+$string['uninstalledlanguage'] = 'Uninstalled Language {$a->name} ({$a->code})';
 $string['updatescheduledreport'] = 'Successfully updated Scheduled Report';
 $string['useraddress'] = 'User\'s Address';
 $string['usercity'] = 'User\'s City';
@@ -714,6 +719,7 @@ $string['userid'] = 'User ID';
 $string['useridnumber'] = 'User ID Number';
 $string['userincohort'] = 'User is a member of audience';
 $string['userinstitution'] = 'User\'s Institution';
+$string['userlang'] = 'User\'s Preferred Language';
 $string['userlastlogin'] = 'User Last Login';
 $string['userlastname'] = 'User Last Name';
 $string['username'] = 'Username';

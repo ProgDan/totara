@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,18 +70,22 @@ class cohort_rule_sqlhandler_reportsto extends cohort_rule_sqlhandler {
                 ."select 1 from {pos_assignment} pa "
                 ."where pa.userid=u.id "
                 ."and pa.type=" . POSITION_TYPE_PRIMARY . ' ';
+        // Both branches of the if statement below need the results of get_in_or_equal.
+        list($sqlin, $params) = $DB->get_in_or_equal($this->managerid, SQL_PARAMS_NAMED, 'rt' . $this->ruleid);
         if ($this->isdirectreport) {
-            list($sqlin, $params) = $DB->get_in_or_equal($this->managerid, SQL_PARAMS_NAMED, 'rt' . $this->ruleid);
             $sqlhandler->sql .= 'and pa.managerid '.$sqlin;
         } else {
             $sqlhandler->sql .= "and (";
             $needor = 0;
+            // We need to get the actual managerpath for each manager for this to work properly.
+            $mgrpaths = $DB->get_records_sql_menu("SELECT userid, managerpath FROM {pos_assignment} WHERE userid {$sqlin} AND type=" . POSITION_TYPE_PRIMARY, $params);
             foreach ($this->managerid as $mid) {
                 if (!empty($needor)) { //don't add on first iteration.
                     $sqlhandler->sql .= ' OR ';
                 }
+                $mgrpath = (!empty($mgrpaths[$mid])) ? $mgrpaths[$mid] : "/{$mid}";
                 $sqlhandler->sql .= $DB->sql_like('pa.managerpath', ':rtm'.$this->ruleid.$needor);
-                $params['rtm'.$this->ruleid.$needor] = $mid;
+                $params['rtm'.$this->ruleid.$needor] = $mgrpath . '/%';
                 $needor = true;
             }
             $sqlhandler->sql .= ")";

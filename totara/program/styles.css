@@ -35,14 +35,15 @@
     font-weight: bold;
     text-transform: uppercase;
     line-height: 1.4;
-    width: 120px;
+    width: auto;
+    display: inline-block;
     height: 53px;
-    padding-right: 44px;
+    padding-right: 80px;
 }
 .dir-rtl .nextsetoperator .operator-or,
 .dir-rtl .nextsetoperator .operator-then {
     padding-right: 0px;
-    padding-left: 44px;
+    padding-left: 80px;
 }
 
 /** Help text that appears below OR/THEN **/

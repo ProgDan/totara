@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,7 +72,8 @@ abstract class rb_base_source {
             'groupid' => null,
             'selectable' => true,
             'scheduleable' => true,
-            'cacheable' => true
+            'cacheable' => true,
+            'hierarchymap' => array()
         );
         foreach ($defaults as $property => $default) {
             if (!property_exists($this, $property)) {
@@ -493,6 +494,22 @@ abstract class rb_base_source {
         return $item === null ? null : sprintf('%.1f%%', $item);
     }
 
+    /**
+     * Display correct course grade via grade or RPL as a percentage string
+     *
+     * @param string $item A number to convert
+     * @param object $row Object containing all other fields for this row
+     *
+     * @return string The percentage with 1 decimal place
+     */
+    function rb_display_course_grade_percent($item, $row) {
+        global $CFG;
+        require_once($CFG->dirroot.'/completion/completion_completion.php');
+        if ($row->course_completion_status == COMPLETION_STATUS_COMPLETEVIARPL && !empty($row->rplgrade)) {
+            $item = $row->rplgrade;
+        }
+        return $item === null ? null : sprintf('%.1f%%', $item);
+    }
     // link user's name to profile page
     // requires the user_id extra field
     // in column definition
@@ -590,7 +607,7 @@ abstract class rb_base_source {
         } else {
             //hierarchy custom fields are stored in the FileAPI fileareas using the longform of the prefix
             //extract prefix from field name
-            $pattern = '/(?P<prefix>(.*?))_custom_field_(\d?)$/';
+            $pattern = '/(?P<prefix>(.*?))_custom_field_(\d+)$/';
             $matches = array();
             preg_match($pattern, $field, $matches);
             if (!empty($matches)) {
@@ -607,6 +624,9 @@ abstract class rb_base_source {
                         break;
                     case 'goal_type':
                         $prefix = 'goal';
+                        break;
+                    case 'course':
+                        $prefix = 'course';
                         break;
                     default:
                         //unknown prefix
@@ -658,6 +678,9 @@ abstract class rb_base_source {
                     break;
                 case 'goal_type':
                     $prefix = 'goal';
+                    break;
+                case 'course':
+                    $prefix = 'course';
                     break;
                 default:
                     //unknown prefix
@@ -825,7 +848,6 @@ abstract class rb_base_source {
 
     // convert a course category name into a link to that category's page
     function rb_display_link_course_category($category, $row, $isexport = false) {
-
         if ($isexport) {
             return format_string($category);
         }
@@ -838,6 +860,13 @@ abstract class rb_base_source {
         $attr = (isset($row->cat_visible) && $row->cat_visible == 0) ? array('class' => 'dimmed') : array();
         $url = new moodle_url('/course/index.php', array('categoryid' => $catid));
         return html_writer::link($url, $category, $attr);
+    }
+
+
+    public function rb_display_audience_visibility($visibility, $row, $isexport = false) {
+        global $COHORT_VISIBILITY;
+
+        return $COHORT_VISIBILITY[$visibility];
     }
 
 
@@ -965,18 +994,103 @@ abstract class rb_base_source {
         }
     }
 
-    // convert a language code into text
+    /**
+     * Column displayfunc to show a hierarchy path as a human-readable string
+     * @param $path the path string of delimited ids e.g. 1/3/7
+     * @param $row data row
+     */
+    function rb_display_nice_hierarchy_path($path, $row) {
+        global $DB;
+        if (empty($path)) {
+            return '';
+        }
+        $displaypath = '';
+        $parentid = 0;
+        // Make sure we know what we are looking for, and that the private var is populated (in source constructor).
+        if (isset($row->hierarchytype) && isset($this->hierarchymap[$row->hierarchytype])) {
+            $paths = explode('/', substr($path, 1));
+            $map = $this->hierarchymap[$row->hierarchytype];
+            foreach ($paths as $path) {
+                if ($parentid !== 0) {
+                    // Include ' > ' before name except on top element.
+                    $displaypath .= ' &gt; ';
+                }
+                if (isset($map[$path])) {
+                    $displaypath .= $map[$path];
+                } else {
+                    // Should not happen if paths are correct!
+                    $displaypath .= get_string('unknown', 'totara_reportbuilder');
+                }
+                $parentid = $path;
+            }
+        }
+
+        return $displaypath;
+    }
+
+    /**
+     * Column displayfunc to convert a language code to a human-readable string
+     * @param $code Language code
+     * @param $row data row - unused in this function
+     * @return string
+     */
     function rb_display_language_code($code, $row) {
-        global $CFG;
+            global $CFG;
+        static $languages = array();
+        $strmgr = get_string_manager();
+        // Populate the static variable if empty
+        if (count($languages) == 0) {
+            // Return all languages available in system (adapted from stringmanager->get_list_of_translations()).
+            $langdirs = get_list_of_plugins('', '', $CFG->langotherroot);
+            $langdirs = array_merge($langdirs, array("{$CFG->dirroot}/lang/en"=>'en'));
+            $curlang = current_language();
+            // Loop through all langs and get info.
+            foreach ($langdirs as $lang) {
+                if (isset($languages[$lang])){
+                    continue;
+                }
+                if (strstr($lang, '_local') !== false) {
+                    continue;
+                }
+                if (strstr($lang, '_utf8') !== false) {
+                    continue;
+                }
+                $string = $strmgr->load_component_strings('langconfig', $lang);
+                if (!empty($string['thislanguage'])) {
+                    $languages[$lang] = $string['thislanguage'];
+                    // If not the current language, provide the English translation also.
+                    if(strpos($lang, $curlang) === false) {
+                        $languages[$lang] .= ' ('. $string['thislanguageint'] .')';
+                    }
+                }
+                unset($string);
+            }
+        }
+
         if (empty($code)) {
             return get_string('notspecified', 'totara_reportbuilder');
         }
-        $countries = get_string_manager()->get_list_of_languages();
-        if (!array_key_exists($code, $countries)) {
-            return get_string('unknown', 'totara_reportbuilder');
+        if (strpos($code, '_') !== false) {
+            list($langcode, $langvariant) = explode('_', $code);
+        } else {
+            $langcode = $code;
         }
 
-        return $countries[$code];
+        // Now see if we have a match in "localname (English)" format.
+        if (isset($languages[$code])) {
+            return $languages[$code];
+        } else {
+            // Not an installed language - may have been uninstalled, as last resort try the get_list_of_languages silly function.
+            $langcodes = $strmgr->get_list_of_languages();
+            if (isset($langcodes[$langcode])) {
+                $a = new stdClass();
+                $a->code = $langcode;
+                $a->name = $langcodes[$langcode];
+                return get_string('uninstalledlanguage', 'totara_reportbuilder', $a);
+            } else {
+                return get_string('unknownlanguage', 'totara_reportbuilder', $code);
+            }
+        }
     }
 
     function rb_display_user_email($email, $row, $isexport = false) {
@@ -1292,6 +1406,21 @@ abstract class rb_base_source {
     //
     //
 
+    /**
+     * Populate the hierarchymap private variable to look up Hierarchy names from ids
+     * e.g. when converting a hierarchy path from ids to human-readable form
+     *
+     * @param array $hierarchies array of all the hierarchy types we want to populate (pos, org, comp, goal etc)
+     *
+     * @return boolean True
+     */
+    function populate_hierarchy_name_map($hierarchies) {
+        global $DB;
+        foreach ($hierarchies as $hierarchy) {
+            $this->hierarchymap["{$hierarchy}"] = $DB->get_records_menu($hierarchy, null, 'id', 'id, fullname');
+        }
+        return true;
+    }
 
     /**
      * Adds the user table to the $joinlist array
@@ -1425,6 +1554,16 @@ abstract class rb_base_source {
             array(
                 'joins' => $join,
                 'displayfunc' => 'nice_datetime',
+            )
+        );
+        $columnoptions[] = new rb_column_option(
+            'user',
+            'lang',
+            get_string('userlang', 'totara_reportbuilder'),
+            "$join.lang",
+            array(
+                'joins' => $join,
+                'displayfunc' => 'language_code',
             )
         );
         // auto-generate columns for user fields
@@ -1684,6 +1823,16 @@ abstract class rb_base_source {
             array(
                 'joins' => $join,
                 'displayfunc' => 'yes_no'
+            )
+        );
+        $columnoptions[] = new rb_column_option(
+            'course',
+            'audvis',
+            get_string('audiencevisibility', 'totara_reportbuilder'),
+            "$join.audiencevisible",
+            array(
+                'joins' => $join,
+                'displayfunc' => 'audience_visibility'
             )
         );
         $columnoptions[] = new rb_column_option(
@@ -1974,6 +2123,26 @@ abstract class rb_base_source {
                     'program_id' => "$join.id",
                     'program_icon' => "$join.icon"
                 )
+            )
+        );
+        $columnoptions[] = new rb_column_option(
+            'prog',
+            'visible',
+            get_string('programvisible', 'totara_program'),
+            "$join.visible",
+            array(
+                'joins' => $join,
+                'displayfunc' => 'yes_no'
+            )
+        );
+        $columnoptions[] = new rb_column_option(
+            'prog',
+            'audvis',
+            get_string('audiencevisibility', 'totara_reportbuilder'),
+            "$join.audiencevisible",
+            array(
+                'joins' => $join,
+                'displayfunc' => 'audience_visibility'
             )
         );
         return true;

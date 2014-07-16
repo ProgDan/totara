@@ -580,7 +580,9 @@ fieldset.surround legend,
 /**
  * Moodle Tabs
  */
-
+div.tabtree2 {
+    margin-bottom: 30px;
+}
 .tabtree .tabrow0:after {
     clear: both;
     content: " ";
@@ -681,6 +683,7 @@ fieldset.surround legend,
 .tabtree .tabrow0 li ul li .empty {
     border: none;
 }
+
 .ie7 .tabtree .tabrow0 li.here .empty,
 .ie7 .tabtree .tabrow1 {
     top: 33px;

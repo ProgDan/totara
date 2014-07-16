@@ -1336,7 +1336,8 @@ class quiz_attempt {
     public function process_submitted_actions($timestamp, $becomingoverdue = false) {
         global $DB;
 
-        $transaction = $DB->start_delegated_transaction();
+        // We cannot use transactions here because of the MDL-30029 issue in messagelib.php.
+        //$transaction = $DB->start_delegated_transaction();
 
         $this->quba->process_all_actions($timestamp);
         question_engine::save_questions_usage_by_activity($this->quba);
@@ -1355,7 +1356,7 @@ class quiz_attempt {
             quiz_save_best_grade($this->get_quiz(), $this->get_userid());
         }
 
-        $transaction->allow_commit();
+        //$transaction->allow_commit();
     }
 
     /**
@@ -1643,7 +1644,7 @@ abstract class quiz_nav_panel_base {
                 $button->stateclass = 'complete';
             }
             $button->statestring = $this->get_state_string($qa, $showcorrectness);
-            $button->currentpage = $this->attemptobj->get_question_page($slot) == $this->page;
+            $button->currentpage = $this->showall || $this->attemptobj->get_question_page($slot) == $this->page;
             $button->flagged     = $qa->is_flagged();
             $button->url         = $this->get_question_url($slot);
             $buttons[] = $button;
@@ -1692,6 +1693,20 @@ abstract class quiz_nav_panel_base {
         $userpicture = new user_picture($user);
         $userpicture->courseid = $this->attemptobj->get_courseid();
         return $userpicture;
+    }
+
+    /**
+     * Return 'allquestionsononepage' as CSS class name when $showall is set,
+     * otherwise, return 'multipages' as CSS class name.
+     * @return string, CSS class name
+     */
+    public function get_button_container_class() {
+        // Quiz navigation is set on 'Show all questions on one page'.
+        if ($this->showall) {
+            return 'allquestionsononepage';
+        }
+        // Quiz navigation is set on 'Show one page at a time'.
+        return 'multipages';
     }
 }
 

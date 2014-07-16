@@ -481,13 +481,14 @@ class quiz_grading_report extends quiz_default_report {
         $qubaids = clean_param_array(explode(',', $qubaids), PARAM_INT);
         $attempts = $this->load_attempts_by_usage_ids($qubaids);
 
-        $transaction = $DB->start_delegated_transaction();
+        // We cannot use transactions here because of the MDL-30029 issue in messagelib.php.
+        //$transaction = $DB->start_delegated_transaction();
         foreach ($qubaids as $qubaid) {
             $attempt = $attempts[$qubaid];
             $attemptobj = new quiz_attempt($attempt, $this->quiz, $this->cm, $this->course);
             $attemptobj->process_submitted_actions(time());
         }
-        $transaction->allow_commit();
+        //$transaction->allow_commit();
     }
 
     /**

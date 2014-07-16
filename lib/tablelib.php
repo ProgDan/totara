@@ -218,6 +218,8 @@ class flexible_table {
 
     /**
      * Use text sorting functions for this column (required for text columns with Oracle).
+     * Be warned that you cannot use this with column aliases. You can only do this
+     * with real columns. See MDL-40481 for an example.
      * @param string column name
      */
     function text_sorting($column) {
@@ -1111,18 +1113,6 @@ class flexible_table {
      */
     function print_headers() {
         global $CFG, $OUTPUT;
-
-        // added in totara: don't print a header row unless at least one heading is defined
-        $headerset = false;
-        foreach ($this->headers as $header) {
-            if ($header !== NULL) {
-                $headerset = true;
-            }
-        }
-        if (!$headerset) {
-            return;
-        }
-        // end added in totara
 
         echo html_writer::start_tag('thead');
         $this->print_extended_headers();

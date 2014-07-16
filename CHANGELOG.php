@@ -3,6 +3,192 @@
 
 Totara LMS Changelog
 
+Release 2.5.8 (18th February 2014):
+==================================================
+
+Security Fixes:
+    T-11765    Set lockout threshold by default to help protect against brute force password attempt
+
+Improvements:
+    T-11596    Added capability to filter by some default fields in Facetoface calendar
+    T-11780    Marked expired certifications due date as overdue
+    T-11828    Avoided ajax call when changing rules in Audience that use radiobuttons
+    T-11722    Made org and pos content restrictions consistent across report sources
+    T-11786    Improved appearance of tables with headers/toolbars in responsive theme
+    T-11506    Added Time signed up to attendees tab for Facetoface
+
+Bug Fixes:
+    T-10885    Fixed Learning Plan enrolment plugin to ensure it enrols learners in course
+    T-11777    Allow wait-listed users to cancel Facetoface bookings if session is over or in progress
+    T-11237    Fixed drop down list forgetting previously saved values in program/certification assignments
+    T-11392    Fixed second level tabs overlapping the following text in Kiwifruit theme
+    T-11815    Fixed fatal error when grading a quiz triggers completion notification messages
+    T-10488    Fixed "reports to manager" Audience rule
+    T-11677    Ensure parent page refresh to start completion checks when SCORM opens as popup
+    T-11755    Fixed course completion upload when multiple records for one user exist in CSV file
+    T-11825    Fixed appearance of popup windows in Kiwifruit theme
+    T-11826    Fixed issue where tabs could appear above modal dialogs
+    T-11798    Remove suspended users from any prior Facetoface bookings
+    T-11791    Fixed issue where menu button didn't display the menu correctly on the iPhone in Totara responsive theme
+    T-11308    Made extra-field aliases unique to avoid name collisions in Report Builder
+    T-11793    Re-added program administration, course reminders, and course competencies navigation
+    T-11784    Fixed issue where the Custom Totara theme wasn't inheriting the base renderer
+    T-11802    Fixed Customtotara Theme issue where certain background colours could make headings hard to read
+    T-11789    Added missing user fields to RoL Certification and Program report sources
+    T-11795    Fixed issue with notice dialog buttons in Totara responsive theme
+    T-11790    Fixed incorrect embedded url in RoL Programs Completion History report
+
+
+Release 2.5.7 (4th February 2014):
+==================================================
+
+Security Fixes:
+    T-11785    Cleaned modulename parameter before generating coursemodule instances
+    T-11783    Added missing validation when exporting calendar
+    T-11782    Added missing validation when managing user tags
+    T-11766    Prevent admins editing system paths without a specific config setting in new installs only
+
+Improvements:
+    T-11746    Changed the totara sync behaviour around user passwords, see here http://community.totaralms.com/mod/forum/discuss.php?d=3708
+
+Bug Fixes:
+    T-11787    Fixed typo in facetoface session to show finish date properly
+    T-11639    Fixed the display of tab trees containing a second row
+    T-11775    Prevent new "Before Session" facetoface notifications from being sent retroactively
+    T-11772    Fixed fatal error on completion with multiple dependant courses
+    T-6072     Fixed whitespace formatting for CLI installs
+    T-11729    Timezone information is now displayed for Facetoface sessions in the calendar
+    T-11764    Fixed display of custom field names when multi-language filter is enabled in reportbuilder
+    T-8008     Fixed staff manager capabilities on new installs
+    T-11366    Fixed delete buttons after adding users to feedback360
+    T-11781    Excluded suspended users from facetoface booking selector
+    T-11776    Fixed Responsive Theme issue when adding rules to an audience
+    T-11778    Fixed language string escaping on Program Assignments tab
+
+API Changes:
+    T-11779    Moved tables header code to totaratablelib.php
+
+
+Release 2.5.6 (21st January 2014):
+==================================================
+
+Security Fixes:
+    MoodleHQ   http://docs.moodle.org/dev/Moodle_2.5.4_release_notes
+
+Improvements:
+    T-10159    Course completion is now turned on by default on an upgrade from Moodle
+    T-11736    Made Facetoface session date/time display on course page more logical
+    T-11742    Added setting to override current course completions in course imports
+    T-11735    Made the view sessions link inactive when the activity is unavailable to learners
+    T-11743    Added human-readable text version of hierarchy paths in reportbuilder reports
+
+Bug Fixes:
+    T-11641    Fixed hardcoded string in required learning when program uses "or" coursesets
+    T-11754    Fixed the display of grades in the Course Completion Report for courses completed via RPL
+    T-11748    Fixed open recertification windows always being marked as overdue
+    T-11760    Prevent deleted users' assignments from being synced
+    T-11758    Fixed facetoface attendees exports and formatting of datetime custom fields
+    T-11221    Fixed recurring courses copying grades into a new course
+    T-11759    Fixed component pagination in Learning Plans
+    T-11699    Fixed capability error when teachers click on Other Users in course enrolment
+    T-11757    Fixed custom field textareas in reports when field id is greater than 9
+    T-11747    Fixed course backup/restore to include the "completionstartonenrol" setting
+    T-10346    Fixed managers email being left blank when exporting Facetoface attendance
+    T-11656    Fixed permission warnings on some feedback360 capabilities
+    T-11021    Fixed RTL issues on Badges pages
+
+API Changes:
+    T-11762    Moved positions navigation code out of Moodle Core
+
+
+Release 2.5.5 (7th January 2014):
+==================================================
+
+Improvements:
+    T-10914    Added totara settings to hide certain functionalities
+
+Bug Fixes:
+    T-11661    Fixed version number in totara core
+    T-11527    Fixed config variable not being set when upgrading from an earlier version of Totara 2.4.8 - Affecting rules based on text in dynamic audiences
+    T-11726    Allow suspended field in user source to be left blank in Totara Sync
+    T-11729    Timezone information is now displayed for Facetoface sessions in the calendar
+    T-11709    Fixed certification completion upload when multiple records for one user exist in CSV file
+    T-11696    Fixed discrepancy between Facetoface Attendance and Export Attendance Reports
+
+
+Release 2.5.4 (24th December 2013):
+==================================================
+
+New features:
+    T-9788    Added "Program enrollment date" event to the program completion criteria options
+
+Improvements:
+    T-11669    Made the "Date Created" field editable for learning plans
+    T-11703    Expanded help relating to course and program visibility
+    T-11708    Added new optional column "preferred language" to reportbuilder user report source
+
+Bug Fixes:
+    MDL-34481  Ensure that completion is recalculated on next cron run following changes to completion settings
+    T-11725    Backport MDL-43019 to fix IE11 crashes in SCORM
+    T-11231    Fixed an issue with certification completion records missing if user is unassigned
+    T-11695    Program report source now conforms to audience visibility
+    T-11705    Fixed potential call to nonexistent function while updating program assignments
+    T-11719    Fixed broken appraisal activation when secondary or aspirational positions are used
+    T-11659    Fixed "Goal Assignments" title duplication when assigning a position, organisation or audience
+               competency to a goal
+    T-11707    Fixed "Assigned Goals" section duplication when adding goals and competencies to an organisation
+    T-11607    Fixed dates when importing certifications using the historic import
+    T-11710    Fixed the "CC managers" setting for facetoface notifications
+    T-11245    Removed hover style in list of courses/programs
+    T-11688    Removed link to blogs when they are disabled
+    T-11684    Certification completion date is now used for expiry and recertification window calculations
+    T-11702    Minor fixes related to visibility of programs and certifications
+    T-11713    Fixed completion import when certification shortname contains an ampersand
+    T-11674    Fixed user profile date fields being set to 1970 when disabled
+    T-11629    Fixed emails not being sent when manually resolving Program exceptions
+    T-5879     Fixed typos in English strings in 360 Feedback, Audiences, and Hierarchy
+    T-11731    Fixed broken certification unit tests in MySQL with sql_auto_is_null setting enabled
+
+
+Release 2.5.3 (10th December 2013):
+==================================================
+
+Improvements:
+    T-11422    Made the audience visibility column editable for Audiences visible learning tabs
+    T-11658    Completions upload reports now show all records instead of just errors
+    T-11693    Improved required learning courseset operators to allow for longer string translations
+    T-11675    Added additional warnings on the archive completions confirmation page
+
+Database Upgrades:
+    T-11682    Changed program/certification completion times to be based off course completion
+    T-11670    Added coursename variable to facetoface notifications and fixed the labelling of facetofacename variables
+    T-11680    Fixed bug where assigning a manager to a secondary position could affect primary positions
+
+Bug Fixes:
+    T-11607    Fixed dates when importing certifications using the historic import
+    T-11671    Fixed the handling of blank values for date/time custom fields in Totara Sync
+    T-11614    Fixed the framework selector for appraisal and feedback360 assignment dialogs
+    T-11622    Fixed goal permissions being applied inconsistently
+    T-11690    Fixed a string not being translated correctly on the required learning page
+    T-11673    Fixed access to reports when site roles have been renamed
+    T-11569    Fixed the required course grade for languages using different characters for the decimal point
+    T-11687    Fixed textarea and file custom course fields not displaying in report builder
+    T-11629    Fixed programs sending duplicate enrolment messages when changing due date between set and relative
+    T-11552    Fixed icals not opening automatically in Outlook 2010
+    T-11534    Fixed facetoface calendar entries not taking course visibility into account
+    T-11657    Fixed role name missing in security overview report
+    T-11650    Fixed access to facetoface approvals page with guest access enabled
+    T-11608    Fixed "Restrict initial display" option not being applied in embedded reports
+    T-11603    Fixed rendering issue in appraisal snapshots
+    T-11685    Fixed facetoface notifications form elements not saving when unchecked
+    T-11661    Prevent password reuse if rotation limit setting enabled
+    T-11681    Fixed ability to view courses within required learning for learners
+    T-11672    Fixed hardcoded string in the completion imports success message
+
+API Changes:
+    T-11662    Added a database event to delete related position assignments when a user is deleted
+
+
 Release 2.5.2 (26th November 2013):
 ==================================================
 

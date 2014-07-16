@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ $sid = optional_param('sid', '0', PARAM_INT);
 $format = optional_param('format', '', PARAM_TEXT);
 $debug = optional_param('debug', 0, PARAM_INT);
 $rolstatus = optional_param('status', 'all', PARAM_ALPHANUM);
+
 if (!in_array($rolstatus, array('active', 'completed', 'all'))) {
     $rolstatus = 'all';
 }
@@ -46,16 +47,21 @@ if (empty($userid)) {
 if (!$user = $DB->get_record('user', array('id' => $userid))) {
     print_error('error:usernotfound', 'totara_plan');
 }
-$context = context_system::instance();
+
 // Users can only view their own and their staff's pages.
 // Or if they are an admin.
+$context = context_system::instance();
 if ($USER->id != $userid && !totara_is_manager($userid) && !has_capability('totara/plan:accessanyplan', $context)) {
     print_error('error:cannotviewpage', 'totara_plan');
 }
 
+$urlparms = array('userid' => $userid, 'status' => $rolstatus);
+if ($compid) {
+    $urlparms['competencyid'] = $compid;
+}
+
 $PAGE->set_context($context);
-$PAGE->set_url(new moodle_url('/totara/hierarchy/prefix/competency/statushistoryreport.php',
-        array('userid' => $userid, 'status' => $rolstatus, 'competencyid' => $compid)));
+$PAGE->set_url(new moodle_url('/totara/hierarchy/prefix/competency/statushistoryreport.php', $urlparms));
 $PAGE->set_pagelayout('noblocks');
 
 $renderer = $PAGE->get_renderer('totara_reportbuilder');
@@ -127,7 +133,6 @@ $currenttab = 'competencies';
 
 dp_print_rol_tabs($rolstatus, $currenttab, $userid);
 
-// Display table here.
 $countfiltered = $report->get_filtered_count();
 $countall = $report->get_full_count();
 
@@ -141,12 +146,12 @@ $report->display_search();
 // Print saved search buttons if appropriate.
 echo $report->display_saved_search_options();
 
-if ($countfiltered > 0) {
-    echo $renderer->showhide_button($report->_id, $report->shortname);
-    $report->display_table();
-    // Export button.
-    $renderer->export_select($report->_id, $sid);
-}
+echo $renderer->showhide_button($report->_id, $report->shortname);
+
+$report->display_table();
+
+// Export button.
+$renderer->export_select($report->_id, $sid);
 
 echo $OUTPUT->container_end();
 

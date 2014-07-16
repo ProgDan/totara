@@ -1201,12 +1201,14 @@ class global_navigation extends navigation_node {
                 // Load the course sections into the page
                 $this->load_course_sections($course, $coursenode, null, $cm);
                 $activity = $coursenode->find($cm->id, navigation_node::TYPE_ACTIVITY);
-                // Finally load the cm specific navigaton information
-                $this->load_activity($cm, $course, $activity);
-                // Check if we have an active ndoe
-                if (!$activity->contains_active_node() && !$activity->search_for_active_node()) {
-                    // And make the activity node active.
-                    $activity->make_active();
+                if (!empty($activity)) {
+                    // Finally load the cm specific navigaton information
+                    $this->load_activity($cm, $course, $activity);
+                    // Check if we have an active ndoe
+                    if (!$activity->contains_active_node() && !$activity->search_for_active_node()) {
+                        // And make the activity node active.
+                        $activity->make_active();
+                    }
                 }
                 break;
             case CONTEXT_USER :
@@ -1822,9 +1824,6 @@ class global_navigation extends navigation_node {
             }
             foreach ($modinfo->sections[$section->section] as $cmid) {
                 $cm = $modinfo->cms[$cmid];
-                if (!$cm->uservisible) {
-                    continue;
-                }
                 $activity = new stdClass;
                 $activity->id = $cm->id;
                 $activity->course = $course->id;
@@ -1842,7 +1841,7 @@ class global_navigation extends navigation_node {
                     $activity->display = false;
                 } else {
                     $activity->url = $cm->get_url()->out();
-                    $activity->display = true;
+                    $activity->display = $cm->uservisible ? true : false;
                     if (self::module_extends_navigation($cm->modname)) {
                         $activity->nodetype = navigation_node::NODETYPE_BRANCH;
                     }
@@ -1981,9 +1980,6 @@ class global_navigation extends navigation_node {
             return null;
         }
         $cm = $modinfo->cms[$this->page->cm->id];
-        if (!$cm->uservisible) {
-            return null;
-        }
         if ($cm->icon) {
             $icon = new pix_icon($cm->icon, get_string('modulename', $cm->modname), $cm->iconcomponent);
         } else {
@@ -1993,7 +1989,11 @@ class global_navigation extends navigation_node {
         $activitynode = $coursenode->add(format_string($cm->name), $url, navigation_node::TYPE_ACTIVITY, null, $cm->id, $icon);
         $activitynode->title(get_string('modulename', $cm->modname));
         $activitynode->hidden = (!$cm->visible);
-        if (!$url) {
+        if (!$cm->uservisible) {
+            // Do not show any error here, let the page handle exception that activity is not visible for the current user.
+            // Also there may be no exception at all in case when teacher is logged in as student.
+            $activitynode->display = false;
+        } else if (!$url) {
             // Don't show activities that don't have links!
             $activitynode->display = false;
         } else if (self::module_extends_navigation($cm->modname)) {
@@ -2270,7 +2270,6 @@ class global_navigation extends navigation_node {
                 $reporttab->trim_if_empty();
             }
         }
-
         return true;
     }
 
@@ -2425,22 +2424,19 @@ class global_navigation extends navigation_node {
         //Participants
         if (has_capability('moodle/course:viewparticipants', $this->page->context)) {
             $participants = $coursenode->add(get_string('participants'), new moodle_url('/user/index.php?id='.$course->id), self::TYPE_CONTAINER, get_string('participants'), 'participants');
-            $currentgroup = groups_get_course_group($course, true);
-            if ($course->id == $SITE->id) {
-                $filtervar = 'courseid';
-                $filterselect = '';
-            } else if ($course->id && !$currentgroup) {
-                $filtervar = 'courseid';
-                $filterselect = $course->id;
-            } else {
-                $filtervar = 'groupid';
-                $filterselect = $currentgroup;
-            }
-            $filterselect = clean_param($filterselect, PARAM_INT);
-            if (($CFG->bloglevel == BLOG_GLOBAL_LEVEL or ($CFG->bloglevel == BLOG_SITE_LEVEL and (isloggedin() and !isguestuser())))
-               and has_capability('moodle/blog:view', context_system::instance())) {
-                $blogsurls = new moodle_url('/blog/index.php', array($filtervar => $filterselect));
-                $participants->add(get_string('blogscourse','blog'), $blogsurls->out());
+            if (!empty($CFG->enableblogs)) {
+                if (($CFG->bloglevel == BLOG_GLOBAL_LEVEL or ($CFG->bloglevel == BLOG_SITE_LEVEL and (isloggedin() and !isguestuser())))
+                   and has_capability('moodle/blog:view', context_system::instance())) {
+                    $blogsurls = new moodle_url('/blog/index.php');
+                    if ($course->id == $SITE->id) {
+                        $blogsurls->param('courseid', 0);
+                    } else if ($currentgroup = groups_get_course_group($course, true)) {
+                        $blogsurls->param('groupid', $currentgroup);
+                    } else {
+                        $blogsurls->param('courseid', $course->id);
+                    }
+                    $participants->add(get_string('blogscourse','blog'), $blogsurls->out());
+                }
             }
             if (!empty($CFG->enablenotes) && (has_capability('moodle/notes:manage', $this->page->context) || has_capability('moodle/notes:view', $this->page->context))) {
                 $participants->add(get_string('notes','notes'), new moodle_url('/notes/index.php', array('filtertype'=>'course', 'filterselect'=>$course->id)));
@@ -2518,7 +2514,7 @@ class global_navigation extends navigation_node {
 
         if (isloggedin()) {
             // Calendar
-            $calendarurl = new moodle_url('/calendar/view.php', array());
+            $calendarurl = new moodle_url('/calendar/view.php', array('view' => 'month'));
             $coursenode->add(get_string('calendar', 'calendar'), $calendarurl, self::TYPE_CUSTOM, null, 'calendar');
         }
 
@@ -3099,12 +3095,22 @@ class navbar extends navigation_node {
      * @return array
      */
     private function get_course_categories() {
+        global $CFG;
+
+        require_once($CFG->dirroot.'/course/lib.php');
         $categories = array();
+        $cap = 'moodle/category:viewhiddencategories';
         foreach ($this->page->categories as $category) {
+            if (!$category->visible && !has_capability($cap, get_category_or_system_context($category->parent))) {
+                continue;
+            }
             $url = new moodle_url('/course/index.php', array('categoryid' => $category->id));
             $name = format_string($category->name, true, array('context' => context_coursecat::instance($category->id)));
-            $categories[] = navigation_node::create($name, $url, self::TYPE_CATEGORY, null, $category->id);
-            $id = $category->parent;
+            $categorynode = navigation_node::create($name, $url, self::TYPE_CATEGORY, null, $category->id);
+            if (!$category->visible) {
+                $categorynode->hidden = true;
+            }
+            $categories[] = $categorynode;
         }
         if (is_enrolled(context_course::instance($this->page->course->id))) {
             $courses = $this->page->navigation->get('mycourses');
@@ -3250,7 +3256,7 @@ class settings_navigation extends navigation_node {
                 $this->load_category_settings();
                 break;
             case CONTEXT_PROGRAM:
-                $this->load_program_settings(true);
+                totara_load_program_settings($this, $this->page->context, true);
                 break;
             case CONTEXT_COURSE:
                 if ($this->page->course->id != $SITE->id) {
@@ -3511,76 +3517,6 @@ class settings_navigation extends navigation_node {
     }
 
     /**
-     * This function loads the program settings that are available for the user
-     *
-     * @param bool $forceopen If set to true the course node will be forced open
-     * @return navigation_node|false
-     */
-    protected function load_program_settings($forceopen = false) {
-        $context = $this->page->context;
-        $program = new program($context->instanceid);
-        $exceptions = $program->get_exception_count();
-        $exceptioncount = $exceptions ? $exceptions : 0;
-
-        $adminnode = $this->add(get_string('programadministration', 'totara_program'), null, self::TYPE_COURSE, null, 'progadmin');
-        if ($forceopen) {
-            $adminnode->force_open();
-        }
-        // Standard tabs.
-        if (has_capability('totara/program:viewprogram', $context)) {
-            $url = new moodle_url('/totara/program/edit.php', array('id' => $program->id, 'action' => 'view'));
-            $adminnode->add(get_string('overview', 'totara_program'), $url, self::TYPE_SETTING, null, 'progoverview', new pix_icon('i/settings', ''));
-        }
-        if (has_capability('totara/program:configuredetails', $context)) {
-            $url = new moodle_url('/totara/program/edit.php', array('id' => $program->id, 'action' => 'edit'));
-            $adminnode->add(get_string('details', 'totara_program'), $url, self::TYPE_SETTING, null, 'progdetails', new pix_icon('i/settings', ''));
-        }
-        if (has_capability('totara/program:configurecontent', $context)) {
-            $url = new moodle_url('/totara/program/edit_content.php', array('id' => $program->id));
-            $adminnode->add(get_string('content', 'totara_program'), $url, self::TYPE_SETTING, null, 'progcontent', new pix_icon('i/settings', ''));
-        }
-        if (has_capability('totara/program:configureassignments', $context)) {
-            $url = new moodle_url('/totara/program/edit_assignments.php', array('id' => $program->id));
-            $adminnode->add(get_string('assignments', 'totara_program'), $url, self::TYPE_SETTING, null, 'progassignments', new pix_icon('i/settings', ''));
-        }
-        if (has_capability('totara/program:configuremessages', $context)) {
-            $url = new moodle_url('/totara/program/edit_messages.php', array('id' => $program->id));
-            $adminnode->add(get_string('messages', 'totara_program'), $url, self::TYPE_SETTING, null, 'progmessages', new pix_icon('i/settings', ''));
-        }
-        if (($exceptioncount > 0) && has_capability('totara/program:handleexceptions', $context)) {
-            $url = new moodle_url('/totara/program/exceptions.php', array('id' => $program->id, 'page' => 0));
-            $adminnode->add(get_string('exceptions', 'totara_program', $exceptioncount), $url, self::TYPE_SETTING, null, 'progexceptions', new pix_icon('i/settings', ''));
-        }
-        if ($program->certifid && has_capability('totara/certification:configurecertification', $context)) {
-            $url = new moodle_url('/totara/certification/edit_certification.php', array('id' => $program->id));
-            $adminnode->add(get_string('certification', 'totara_certification'), $url, self::TYPE_SETTING, null, 'certification', new pix_icon('i/settings', ''));
-        }
-        // Roles and permissions.
-        $usersnode = $adminnode->add(get_string('users'), null, navigation_node::TYPE_CONTAINER, null, 'users');
-        // Override roles.
-        if (has_capability('moodle/role:review', $context)) {
-            $url = new moodle_url('/admin/roles/permissions.php', array('contextid' => $context->id));
-        } else {
-            $url = NULL;
-        }
-        $permissionsnode = $usersnode->add(get_string('permissions', 'role'), $url, navigation_node::TYPE_SETTING, null, 'override');
-        // Add assign or override roles if allowed
-        if (is_siteadmin()) {
-            if (has_capability('moodle/role:assign', $context)) {
-                $url = new moodle_url('/admin/roles/assign.php', array('contextid' => $context->id));
-                $permissionsnode->add(get_string('assignedroles', 'role'), $url, navigation_node::TYPE_SETTING, null, 'roles', new pix_icon('t/assignroles', ''));
-            }
-        }
-        // Check role permissions
-        if (has_any_capability(array('moodle/role:assign', 'moodle/role:safeoverride','moodle/role:override', 'moodle/role:assign'), $context)) {
-            $url = new moodle_url('/admin/roles/check.php', array('contextid' => $context->id));
-            $permissionsnode->add(get_string('checkpermissions', 'role'), $url, navigation_node::TYPE_SETTING, null, 'permissions', new pix_icon('i/checkpermissions', ''));
-        }
-        // just in case nothing was actually added
-        $usersnode->trim_if_empty();
-        $adminnode->trim_if_empty();
-    }
-    /**
      * This function loads the course settings that are available for the user
      *
      * @param bool $forceopen If set to true the course node will be forced open
@@ -3631,17 +3567,13 @@ class settings_navigation extends navigation_node {
             if ($CFG->enablecompletion && $course->enablecompletion) {
                 $url = new moodle_url('/course/completion.php', array('id'=>$course->id));
                 $coursenode->add(get_string('coursecompletion', 'completion'), $url, self::TYPE_SETTING, null, null, new pix_icon('i/settings', ''));
-
-                $url = new moodle_url('/course/archivecompletions.php', array('id' => $course->id));
-                $coursenode->add(get_string('archivecompletions', 'completion'), $url,
-                    self::TYPE_SETTING, null, null, new pix_icon('i/settings', ''));
             }
 
-            // Add the course competencies link
-            $url = new moodle_url('/course/competency.php', array('id'=>$course->id));
+            // Add the course competencies link.
+            $url = new moodle_url('/course/competency.php', array('id' => $course->id));
             $coursenode->add(get_string('competencies', 'totara_hierarchy'), $url, self::TYPE_SETTING, null, null, new pix_icon('i/settings', ''));
 
-            // Add the course reminders link
+            // Add the course reminders link.
             $url = new moodle_url('/course/reminders.php', array('courseid' => $course->id));
             $coursenode->add(get_string('remindersmenuitem', 'totara_coursecatalog'), $url, self::TYPE_SETTING, null, null, new pix_icon('i/email', ''));
         }
@@ -4104,47 +4036,9 @@ class settings_navigation extends navigation_node {
             $usersetting->add(get_string("changepassword"), $passwordchangeurl, self::TYPE_SETTING);
         }
 
-        //Add positions links
-        $canview = false;
-        if (!empty($USER->id) && ($user->id == $USER->id) && has_capability('totara/hierarchy:viewposition', $systemcontext)) {
-            // Can view own profile
-            $canview = true;
-        }
-        elseif (has_capability('moodle/user:viewdetails', $coursecontext)) {
-            $canview = true;
-        }
-        elseif (has_capability('moodle/user:viewdetails', $usercontext)) {
-            $canview = true;
-        }
-
-        $positionsenabled = get_config('totara_hierarchy', 'positionsenabled');
-        if ($canview && $positionsenabled) {
-            $posbaseargs['user'] = $user->id;
-
-            $enabled_positions = explode(',', $positionsenabled);
-            // Get default enabled position type
-            global $POSITION_CODES;
-            foreach ($POSITION_CODES as $ptype => $poscode) {
-                if (in_array($poscode, $enabled_positions)) {
-                    $dtype = $ptype;
-                    break;
-                }
-            }
-            $url = new moodle_url('/user/positions.php', array_merge($posbaseargs, array('type' => $dtype)));
-
-            // Link to users Positions page
-            $positions = $usersetting->add(get_string('positions', 'totara_hierarchy'), null, self::TYPE_CONTAINER);
-
-            require_once($CFG->dirroot . '/totara/hierarchy/prefix/position/lib.php');
-            global $POSITION_TYPES;
-
-            foreach ($POSITION_TYPES as $pcode => $ptype) {
-                if (in_array($pcode, $enabled_positions)) {
-                    $url = new moodle_url('/user/positions.php', array_merge($posbaseargs, array('type' => $ptype)));
-                    $positions->add(get_string('type' . $ptype, 'totara_hierarchy'), $url, self::TYPE_USER);
-                }
-            }
-        }
+        // Add positions links
+        require_once($CFG->dirroot . '/totara/hierarchy/prefix/position/lib.php');
+        pos_add_nav_positions_links($course->id, $user->id, $usersetting);
 
         // View the roles settings
         if (has_any_capability(array('moodle/role:assign', 'moodle/role:safeoverride','moodle/role:override', 'moodle/role:manage'), $usercontext)) {
@@ -4304,14 +4198,10 @@ class settings_navigation extends navigation_node {
         $categorynode = $this->add(print_context_name($this->context), null, null, null, 'categorysettings');
         $categorynode->force_open();
         $onmanagepage = $this->page->url->compare(new moodle_url('/course/manage.php'), URL_MATCH_BASE);
-        $onprogmanagepage = $this->page->url->compare(new moodle_url('/totara/program/manage.php'), URL_MATCH_BASE);
 
-        if (can_edit_in_category($this->context->instanceid) && !$onmanagepage && !$onprogmanagepage) {
+        if (can_edit_in_category($this->context->instanceid) && !$onmanagepage) {
             $url = new moodle_url('/course/manage.php', array('categoryid' => $this->context->instanceid));
-            $editstring = get_string('managecourses', 'admin');
-            $categorynode->add($editstring, $url, self::TYPE_SETTING, null, null, new pix_icon('i/edit', ''));
-            $url = new moodle_url('/totara/program/manage.php', array('categoryid' => $this->context->instanceid));
-            $editstring = get_string('manageprograms', 'admin');
+            $editstring = get_string('managecategorythis');
             $categorynode->add($editstring, $url, self::TYPE_SETTING, null, null, new pix_icon('i/edit', ''));
         }
 

@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -268,5 +268,29 @@ function xmldb_totara_reportbuilder_upgrade($oldversion) {
         totara_upgrade_mod_savepoint(true, 2013103000, 'totara_reportbuilder');
     }
 
+    if ($oldversion < 2013121000) {
+        require_once($CFG->dirroot . '/totara/reportbuilder/lib.php');
+
+        // Rename any existing records for the timecompleted column/filter in dp_certifications.
+        reportbuilder_rename_data('columns', 'dp_certification', 'prog_completion', 'timecompleted', 'certif_completion', 'timecompleted');
+        reportbuilder_rename_data('filters', 'dp_certification', 'prog_completion', 'timecompleted', 'certif_completion', 'timecompleted');
+
+        // Report builder savepoint reached.
+        totara_upgrade_mod_savepoint(true, 2013121000, 'totara_reportbuilder');
+    }
+
+    if ($oldversion < 2014012400) {
+        // Changing length of field from 255 to 1024 to match length of hierarchy custom field names.
+        $table = new xmldb_table('report_builder_columns');
+        $field = new xmldb_field('heading', XMLDB_TYPE_CHAR, '1024', null, null, null, null, 'value');
+        // Launch change of type for field heading
+        $dbman->change_field_precision($table, $field);
+        // Changing length of field from 255 to 1024 to match length of hierarchy custom field names.
+        $table = new xmldb_table('report_builder_filters');
+        $field = new xmldb_field('filtername', XMLDB_TYPE_CHAR, '1024', null, null, null, null, 'advanced');
+        // Launch change of type for field filtername
+        $dbman->change_field_precision($table, $field);
+        totara_upgrade_mod_savepoint(true, 2014012400, 'totara_reportbuilder');
+    }
     return true;
 }

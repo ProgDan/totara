@@ -1,25 +1,25 @@
 <?php
 /*
  * This file is part of Totara LMS
-*
-* Copyright (C) 2010-2013 Totara Learning Solutions LTD
-*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*
-* @package totara
-* @subpackage program
-*/
+ *
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @package totara
+ * @subpackage program
+ */
 
 $string['action'] = 'Action';
 $string['addcohortstoprogram'] = 'Add audiences to program';
@@ -78,6 +78,7 @@ $string['allcurrentlyassignedissues'] = 'All "already assigned" issues';
 $string['allduplicatecourseissues'] = 'All "duplicate course in certifications" issues';
 $string['allextensionrequestissues'] = 'All "extension request" issues';
 $string['alllearners'] = 'All learners';
+$string['allowedtimeforprogramaslearner'] = 'You are allowed {$a->num} {$a->periodstr} to complete this program.';
 $string['allowedtimeforprogramasmanager'] = '{$a->fullname} will require at least {$a->num} {$a->periodstr} to complete this program.';
 $string['allowedtimeforprograminfinity'] = 'There is no time limit to complete this program.';
 $string['allowedtimeforprogramviewing'] = 'A learner is allowed {$a->num} {$a->periodstr} to complete this program.';
@@ -263,6 +264,7 @@ $string['error:processingextrequest'] = 'An error occured when processing extens
 $string['error:prognotmoved'] = 'Error, program not moved!';
 $string['error:programdoesnotbelongtocategory'] = 'The program doesn\'t belong to this category';
 $string['error:progsnotmoved'] = 'Error, programs not moved from {$a}!';
+$string['error:recertduedatenotset'] = 'Error, recertifications must have an expiry date';
 $string['error:recur_nocourse'] = 'A course must be selected.';
 $string['error:recurrence_nonzero'] = 'Recurrence must be higher than zero';
 $string['error:setunableaddcompetency'] = 'Unable to add competency to set. Set or competency not found.';
@@ -481,6 +483,7 @@ $string['noprogramsfound'] = 'No programs were found with the words \'{$a}\'';
 $string['noprogramsyet'] = 'No programs in this category';
 $string['norequiredlearning'] = 'No required learning';
 $string['nostartdate'] = 'No start date';
+$string['notassigned'] = 'Not assigned';
 $string['notavailable'] = 'Not available';
 $string['notifymanager'] = 'Send notice to manager';
 $string['notifymanager_help'] = 'Check this box if you also want to send a notice to the message recipient\'s manager.';
@@ -499,6 +502,7 @@ $string['organisationname'] = 'Organisation name';
 $string['organisations'] = 'Organisations';
 $string['organisations_category'] = 'organisation(s)';
 $string['orviewprograms'] = 'or view programs in this category ({$a})';
+$string['overdue'] = 'Overdue!';
 $string['overrideandaddprogram'] = 'Override and add program';
 $string['overview'] = 'Overview';
 $string['partofteam'] = 'Part of \'{$a}\' team.';
@@ -578,6 +582,7 @@ $string['programduedate'] = 'Program due date';
 $string['programduemessage'] = 'Program due message';
 $string['programduemessage_help'] = 'This message will be sent at the specified time before a program is due.';
 $string['programends'] = 'Program ends';
+$string['programenrollmentdate'] = 'Program enrollment date';
 $string['programexceptions'] = 'Program exceptions';
 $string['programfullname'] = 'Program Fullname';
 $string['programfullname_help'] = 'The full name of the program is displayed at the top of the screen and in the program listings.';
@@ -615,6 +620,7 @@ $string['programvisibility'] = 'Program Visibility';
 $string['programvisibility_help'] = 'If the program is visible, it will appear in program listings and search results and students will be able to view the program contents.
 
 If the program is not visble, it will not appear in program listings or search results but the program will still be displayed in the learning plans of any students who have been assigned to the program and students can still access the program if they know the program\'s URL.';
+$string['programvisible'] = 'Program Visible';
 $string['progress'] = 'Progress';
 $string['reason'] = 'Extension reason';
 $string['reasonforextension'] = 'Reason for extension';

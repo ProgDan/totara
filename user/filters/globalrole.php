@@ -32,7 +32,7 @@ class user_filter_globalrole extends user_filter_type {
      * @param object $mform a MoodleForm object to setup
      */
     function setupForm(&$mform) {
-        $obj =& $mform->addElement('select', $this->_name, $this->_label, $this->get_roles());
+        $obj =& $mform->addElement('select', $this->_name, format_string($this->_label), $this->get_roles());
         $mform->setDefault($this->_name, 0);
         if ($this->_advanced) {
             $mform->setAdvanced($this->_name);

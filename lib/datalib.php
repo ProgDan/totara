@@ -1308,6 +1308,11 @@ function get_coursemodule_from_id($modulename, $cmid, $courseid=0, $sectionnum=f
         }
     }
 
+    // Ensure $modulename matches syntax for a valid table name.
+    if (!preg_match('/^[a-z][a-z0-9_]*$/', $modulename)) {
+        return false;
+    }
+
     $params['modulename'] = $modulename;
 
     $courseselect = "";
@@ -1350,6 +1355,11 @@ function get_coursemodule_from_id($modulename, $cmid, $courseid=0, $sectionnum=f
  */
 function get_coursemodule_from_instance($modulename, $instance, $courseid=0, $sectionnum=false, $strictness=IGNORE_MISSING) {
     global $DB;
+
+    // Ensure $modulename matches syntax for a valid table name.
+    if (!preg_match('/^[a-z][a-z0-9_]*$/', $modulename)) {
+        return false;
+    }
 
     $params = array('instance'=>$instance, 'modulename'=>$modulename);
 

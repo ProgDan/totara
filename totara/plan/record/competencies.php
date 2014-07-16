@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,128 +27,124 @@
  *
  */
 
-    require_once(dirname(dirname(dirname(dirname(__FILE__)))) . '/config.php');
-    require_once($CFG->dirroot.'/totara/reportbuilder/lib.php');
-    require_once($CFG->dirroot.'/totara/plan/lib.php');
+require_once(dirname(dirname(dirname(dirname(__FILE__)))) . '/config.php');
+require_once($CFG->dirroot.'/totara/reportbuilder/lib.php');
+require_once($CFG->dirroot.'/totara/plan/lib.php');
 
-    require_login();
+require_login();
 
-    global $SESSION,$USER;
+global $USER;
 
-    $userid     = optional_param('userid', null, PARAM_INT);                       // which user to show
-    $sid = optional_param('sid', '0', PARAM_INT);
-    $format = optional_param('format','', PARAM_TEXT); // export format
-    $rolstatus = optional_param('status', 'all', PARAM_ALPHANUM);
-    if (!in_array($rolstatus, array('active','completed','all'))) {
-        $rolstatus = 'all';
-    }
+$userid     = optional_param('userid', null, PARAM_INT); // Which user to show.
+$sid = optional_param('sid', '0', PARAM_INT);
+$format = optional_param('format','', PARAM_TEXT); // Export format.
+$rolstatus = optional_param('status', 'all', PARAM_ALPHANUM);
+if (!in_array($rolstatus, array('active','completed','all'))) {
+    $rolstatus = 'all';
+}
 
-    // default to current user
-    if (empty($userid)) {
-        $userid = $USER->id;
-    }
+// Default to current user.
+if (empty($userid)) {
+    $userid = $USER->id;
+}
 
-    if (!$user = $DB->get_record('user', array('id' => $userid))) {
-        print_error('error:usernotfound', 'totara_plan');
-    }
-    $context = context_system::instance();
-    // users can only view their own and their staff's pages
-    // or if they are an admin
-    if ($USER->id != $userid && !totara_is_manager($userid) && !has_capability('totara/plan:accessanyplan',$context)) {
-        print_error('error:cannotviewpage', 'totara_plan');
-    }
+if (!$user = $DB->get_record('user', array('id' => $userid))) {
+    print_error('error:usernotfound', 'totara_plan');
+}
+$context = context_system::instance();
+// Users can only view their own and their staff's pages.
+// Or if they are an admin.
+if ($USER->id != $userid && !totara_is_manager($userid) && !has_capability('totara/plan:accessanyplan',$context)) {
+    print_error('error:cannotviewpage', 'totara_plan');
+}
 
-    $PAGE->set_context($context);
-    $PAGE->set_url(new moodle_url('/totara/plan/record/competencies.php',
-        array('userid' => $userid, 'status' => $rolstatus, 'format' => $format)));
-    $PAGE->set_pagelayout('noblocks');
+$PAGE->set_context($context);
+$PAGE->set_url(new moodle_url('/totara/plan/record/competencies.php',
+    array('userid' => $userid, 'status' => $rolstatus, 'format' => $format)));
+$PAGE->set_pagelayout('noblocks');
 
-    $renderer = $PAGE->get_renderer('totara_reportbuilder');
+$renderer = $PAGE->get_renderer('totara_reportbuilder');
 
-    if ($USER->id != $userid) {
-        $strheading = get_string('recordoflearningfor', 'totara_core').fullname($user, true);
-    } else {
-        $strheading = get_string('recordoflearning', 'totara_core');
-    }
-    // get subheading name for display
-    $strsubheading = get_string($rolstatus.'competenciessubhead', 'totara_plan');
+if ($USER->id != $userid) {
+    $strheading = get_string('recordoflearningfor', 'totara_core').fullname($user, true);
+} else {
+    $strheading = get_string('recordoflearning', 'totara_core');
+}
+// Get subheading name for display.
+$strsubheading = get_string($rolstatus.'competenciessubhead', 'totara_plan');
 
-    $shortname = 'plan_competencies';
-    $data = array(
-        'userid' => $userid,
-    );
-    if ($rolstatus !== 'all') {
-        $data['rolstatus'] = $rolstatus;
-    }
-    if (!$report = reportbuilder_get_embedded_report($shortname, $data, false, $sid)) {
-        print_error('error:couldnotgenerateembeddedreport', 'totara_reportbuilder');
-    }
+$shortname = 'plan_competencies';
+$data = array(
+    'userid' => $userid,
+);
+if ($rolstatus !== 'all') {
+    $data['rolstatus'] = $rolstatus;
+}
+if (!$report = reportbuilder_get_embedded_report($shortname, $data, false, $sid)) {
+    print_error('error:couldnotgenerateembeddedreport', 'totara_reportbuilder');
+}
 
-    $logurl = $PAGE->url->out_as_local_url();
-    if ($format != '') {
-        add_to_log(SITEID, 'rbembedded', 'record export', $logurl, $report->fullname);
-        $report->export_data($format);
-        die;
-    }
+$logurl = $PAGE->url->out_as_local_url();
+if ($format != '') {
+    add_to_log(SITEID, 'rbembedded', 'record export', $logurl, $report->fullname);
+    $report->export_data($format);
+    die;
+}
 
-    add_to_log(SITEID, 'rbembedded', 'record view', $logurl, $report->fullname);
+add_to_log(SITEID, 'rbembedded', 'record view', $logurl, $report->fullname);
 
-    $report->include_js();
+$report->include_js();
 
-    ///
-    /// Display the page
-    ///
+///
+/// Display the page
+///
 
-    $PAGE->navbar->add(get_string('mylearning', 'totara_core'), new moodle_url('/my/'));
-    $PAGE->navbar->add($strheading, new moodle_url('/totara/plan/record/index.php'));
-    $PAGE->navbar->add($strsubheading);
+$PAGE->navbar->add(get_string('mylearning', 'totara_core'), new moodle_url('/my/'));
+$PAGE->navbar->add($strheading, new moodle_url('/totara/plan/record/index.php'));
+$PAGE->navbar->add($strsubheading);
 
-    $PAGE->set_title($strheading);
-    $PAGE->set_heading($strheading);
-    $PAGE->set_button($report->edit_button());
+$PAGE->set_title($strheading);
+$PAGE->set_heading($strheading);
+$PAGE->set_button($report->edit_button());
 
-    $ownplan = $USER->id == $userid;
+$ownplan = $USER->id == $userid;
 
-    $usertype = ($ownplan) ? 'learner' : 'manager';
-    $menuitem = ($ownplan) ? 'recordoflearning' : 'myteam';
-    $PAGE->set_totara_menu_selected($menuitem);
+$usertype = ($ownplan) ? 'learner' : 'manager';
+$menuitem = ($ownplan) ? 'recordoflearning' : 'myteam';
+$PAGE->set_totara_menu_selected($menuitem);
 
-    echo $OUTPUT->header();
+echo $OUTPUT->header();
 
-    echo dp_display_plans_menu($userid, 0, $usertype, 'competencies', $rolstatus);
+echo dp_display_plans_menu($userid, 0, $usertype, 'competencies', $rolstatus);
 
-    echo $OUTPUT->container_start('', 'dp-plan-content');
+echo $OUTPUT->container_start('', 'dp-plan-content');
 
-    echo $OUTPUT->heading($strheading.' : '.$strsubheading, 1);
+echo $OUTPUT->heading($strheading.' : '.$strsubheading, 1);
 
-    $userstr = (isset($userid)) ? 'userid='.$userid.'&amp;' : '';
+$currenttab = 'competencies';
 
-    $currenttab = 'competencies';
+dp_print_rol_tabs($rolstatus, $currenttab, $userid);
 
-    dp_print_rol_tabs($rolstatus, $currenttab, $userid);
+$countfiltered = $report->get_filtered_count();
+$countall = $report->get_full_count();
 
-    // display table here
-    $fullname = $report->fullname;
-    $countfiltered = $report->get_filtered_count();
-    $countall = $report->get_full_count();
+$heading = $renderer->print_result_count_string($countfiltered, $countall);
+echo $OUTPUT->heading($heading);
 
-    $heading = $renderer->print_result_count_string($countfiltered, $countall);
-    echo $OUTPUT->heading($heading);
+echo $renderer->print_description($report->description, $report->_id);
 
-    echo $renderer->print_description($report->description, $report->_id);
+$report->display_search();
 
-    $report->display_search();
+// Print saved search buttons if appropriate.
+echo $report->display_saved_search_options();
 
-    // Print saved search buttons if appropriate.
-    echo $report->display_saved_search_options();
+echo $renderer->showhide_button($report->_id, $report->shortname);
 
-    if ($countfiltered > 0) {
-        echo $renderer->showhide_button($report->_id, $report->shortname);
-        $report->display_table();
-        // export button
-        $renderer->export_select($report->_id, $sid);
-    }
+$report->display_table();
 
-    echo $OUTPUT->container_end();
+// Export button.
+$renderer->export_select($report->_id, $sid);
 
-    echo $OUTPUT->footer();
+echo $OUTPUT->container_end();
+
+echo $OUTPUT->footer();

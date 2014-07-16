@@ -23,8 +23,8 @@ if ($hassiteconfig) {
 
 $ADMIN->add('root', new admin_category('users', new lang_string('users','admin')));
 $ADMIN->add('root', new admin_category('hierarchies', new lang_string('hierarchies','totara_hierarchy')));
-$ADMIN->add('root', new admin_category('totara_plan', new lang_string('learningplans', 'totara_plan')));
-$ADMIN->add('root', new admin_category('appraisals', new lang_string('appraisals', 'totara_appraisal')));
+$ADMIN->add('root', new admin_category('totara_plan', new lang_string('learningplans', 'totara_plan'), empty($CFG->enablelearningplans)));
+$ADMIN->add('root', new admin_category('appraisals', new lang_string('appraisals', 'totara_appraisal'), (empty($CFG->enableappraisals) && empty($CFG->enablefeedback360))));
 $ADMIN->add('root', new admin_category('courses', new lang_string('courses','admin')));
 $ADMIN->add('root', new admin_category('grades', new lang_string('grades')));
 $ADMIN->add('root', new admin_category('badges', new lang_string('badges'), empty($CFG->enablebadges)));

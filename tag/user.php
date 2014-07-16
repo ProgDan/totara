@@ -21,6 +21,10 @@ if (!confirm_sesskey()) {
     print_error('sesskey');
 }
 
+// Either tag or tagid is required.
+if (empty($tag) && !$id) {
+    print_error('invaliddata');
+}
 
 switch ($action) {
     case 'addinterest':

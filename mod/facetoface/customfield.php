@@ -1,4 +1,26 @@
 <?php
+/*
+ * This file is part of Totara LMS
+ *
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @package modules
+ * @subpackage facetoface
+ */
+
 global $DB;
 require_once '../../config.php';
 require_once 'customfield_form.php';
@@ -85,9 +107,6 @@ if ($fromform = $mform->get_data()) { // Form submitted
     if (empty($fromform->required)) {
         $fromform->required = 0;
     }
-    if (empty($fromform->isfilter)) {
-        $fromform->isfilter = 0;
-    }
     if (empty($fromform->showinsummary)) {
         $fromform->showinsummary = 0;
     }
@@ -111,7 +130,6 @@ if ($fromform = $mform->get_data()) { // Form submitted
     $todb->defaultvalue = trim($fromform->defaultvalue);
     $todb->possiblevalues = implode(CUSTOMFIELD_DELIMITER, $pos_vals);
     $todb->required = $fromform->required;
-    $todb->isfilter = $fromform->isfilter;
     $todb->showinsummary = $fromform->showinsummary;
 
     if ($field != null) {
@@ -139,7 +157,6 @@ elseif ($field != null) { // Edit mode
     $possible_values = implode(PHP_EOL, $value_array);
     $toform->possiblevalues = $possible_values;
     $toform->required = ($field->required == 1);
-    $toform->isfilter = ($field->isfilter == 1);
     $toform->showinsummary = ($field->showinsummary == 1);
 
     $mform->set_data($toform);

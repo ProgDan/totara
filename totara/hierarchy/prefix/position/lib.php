@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -141,12 +141,14 @@ class position extends hierarchy {
         echo html_writer::empty_tag('br');
 
         // Display all goals assigned to this item.
-        $addgoalparam = array('assignto' => $item->id, 'assigntype' => GOAL_ASSIGNMENT_POSITION, 'sesskey' => sesskey());
-        $addgoalurl = new moodle_url('/totara/hierarchy/prefix/goal/assign/find.php', $addgoalparam);
-        echo html_writer::start_tag('div', array('class' => 'list-assigned-goals'));
-        echo $OUTPUT->heading(get_string('goalsassigned', 'totara_hierarchy'));
-        echo $renderer->print_assigned_goals($this->prefix, $this->shortprefix, $addgoalurl, $item->id);
-        echo html_writer::end_tag('div');
+        if (!empty($CFG->enablegoals) && !is_ajax_request($_SERVER)) {
+            $addgoalparam = array('assignto' => $item->id, 'assigntype' => GOAL_ASSIGNMENT_POSITION, 'sesskey' => sesskey());
+            $addgoalurl = new moodle_url('/totara/hierarchy/prefix/goal/assign/find.php', $addgoalparam);
+            echo html_writer::start_tag('div', array('class' => 'list-assigned-goals'));
+            echo $OUTPUT->heading(get_string('goalsassigned', 'totara_hierarchy'));
+            echo $renderer->print_assigned_goals($this->prefix, $this->shortprefix, $addgoalurl, $item->id);
+            echo html_writer::end_tag('div');
+        }
     }
 
     /**
@@ -602,7 +604,8 @@ class position_assignment extends data_object {
 
         if ($managerchanged) {
             // now recalculate managerpath
-            $manager_relations = $DB->get_records_menu('pos_assignment', array('type' => POSITION_TYPE_PRIMARY), 'userid', 'userid,managerid');
+            $manager_relations = $DB->get_records_menu('pos_assignment', array('type' => $this->type),
+                'userid', 'userid,managerid');
             //Manager relation for this assignment's user is wrong so we have to fix it
             $manager_relations[$this->userid] = $this->managerid;
             $this->managerpath = '/' . implode(totara_get_lineage($manager_relations, $this->userid), '/');
@@ -620,7 +623,7 @@ class position_assignment extends data_object {
                 SET managerpath = {$managerpath}
                 WHERE type = ? AND $like";
             $params = array(
-                POSITION_TYPE_PRIMARY,
+                $this->type,
                 "%/{$this->userid}/%"
             );
 
@@ -643,6 +646,56 @@ class position_assignment extends data_object {
     }
 }
 
+/**
+ * Setup Position links in navigation - called from navigationlib.php generate_user_settings()
+ *
+ * @param $courseid id of current course to obtain course context
+ * @param $userid the id of the user - may be the current user or an admin viewing the profile of another user
+ * @param $usersetting the navigation node we add the Positions links to
+ * @return void
+ */
+function pos_add_nav_positions_links($courseid, $userid, $usersetting) {
+    global $CFG, $USER, $POSITION_CODES, $POSITION_TYPES;
+
+    $systemcontext   = get_system_context();
+    $usercontext = context_user::instance($userid);
+    $coursecontext = context_course::instance($courseid);
+
+    $canview = false;
+    if (!empty($USER->id) && ($userid == $USER->id) && has_capability('totara/hierarchy:viewposition', $systemcontext)) {
+        // Can view own profile.
+        $canview = true;
+    } else if (has_capability('moodle/user:viewdetails', $coursecontext)) {
+        $canview = true;
+    } else if (has_capability('moodle/user:viewdetails', $usercontext)) {
+        $canview = true;
+    }
+
+    $positionsenabled = get_config('totara_hierarchy', 'positionsenabled');
+    if ($canview && $positionsenabled) {
+        $posbaseargs['user'] = $userid;
+
+        $enabled_positions = explode(',', $positionsenabled);
+        // Get default enabled position type.
+        foreach ($POSITION_CODES as $ptype => $poscode) {
+            if (in_array($poscode, $enabled_positions)) {
+                $dtype = $ptype;
+                break;
+            }
+        }
+        $url = new moodle_url('/user/positions.php', array_merge($posbaseargs, array('type' => $dtype)));
+
+        // Link to users Positions page.
+        $positions = $usersetting->add(get_string('positions', 'totara_hierarchy'), null, navigation_node::TYPE_CONTAINER);
+
+        foreach ($POSITION_TYPES as $pcode => $ptype) {
+            if (in_array($pcode, $enabled_positions)) {
+                $url = new moodle_url('/user/positions.php', array_merge($posbaseargs, array('type' => $ptype)));
+                $positions->add(get_string('type' . $ptype, 'totara_hierarchy'), $url, navigation_node::TYPE_USER);
+            }
+        }
+    }
+}
 /**
  * Calcuates if a user can edit a position assignment
  *

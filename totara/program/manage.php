@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +21,6 @@
  *
  * @package    totara
  * @subpackage program
- * @copyright  2013 onwards Totara Learning Solutions Ltd {@link http://www.totaralms.com/}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author     Yuliya Bozhko <yuliya.bozhko@totaralms.com>
  */
 
@@ -535,7 +533,12 @@ if (!$programs) {
 
         $programurl = new moodle_url('/totara/program/view.php', array('id' => $aprogram->id, 'viewtype' => $viewtype));
         $attributes = array();
-        $attributes['class'] = $aprogram->visible ? '' : 'dimmed';
+        if (empty($CFG->audiencevisibility)) {
+            $isdimmed = !$aprogram->visible;
+        } else {
+            $isdimmed = $aprogram->audiencevisible != COHORT_VISIBLE_ALL;
+        }
+        $attributes['class'] = $isdimmed ? 'dimmed' : '';
         $programname = format_string($aprogram->fullname);
         $programname = html_writer::link($programurl, $programname, $attributes);
 

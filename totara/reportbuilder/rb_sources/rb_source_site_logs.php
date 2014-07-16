@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  * Copyright (C) 1999 onwards Martin Dougiamas
  *
  * This program is free software; you can redistribute it and/or modify
@@ -175,16 +175,16 @@ class rb_source_site_logs extends rb_base_source {
     protected function define_contentoptions() {
         $contentoptions = array(
             new rb_content_option(
-                'current_org',                      // class name
-                get_string('currentorg', 'rb_source_site_logs'),  // title
-                'organisation.path',                // field
-                'organisation'                      // joins
+                'current_pos',
+                get_string('currentpos', 'totara_reportbuilder'),
+                'position.path',
+                'position'
             ),
             new rb_content_option(
-                'current_pos',                      // class name
-                get_string('currentpos', 'rb_source_site_logs'),      // title
-                'position.path',                    // field
-                'position'                          // joins
+                'current_org',
+                get_string('currentorg', 'totara_reportbuilder'),
+                'organisation.path',
+                'organisation'
             ),
             new rb_content_option(
                 'user',

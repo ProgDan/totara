@@ -139,6 +139,10 @@ if(!empty($what) && !empty($time)) {
         redirect($CFG->wwwroot.'/calendar/export.php');
         die();
     }
+} else {
+    // Parameters missing or empty, redirect back to export page.
+    redirect($CFG->wwwroot.'/calendar/export.php');
+    die();
 }
 $events = calendar_get_events($timestart, $timeend, $users, $groups, array_keys($courses), false);
 

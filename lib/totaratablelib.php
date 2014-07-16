@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -211,6 +211,28 @@ class totara_table extends flexible_table {
             html_writer::tag('td',
                 $this->get_no_records_message(),
                 array('colspan' => count($this->columns), 'class' => 'norecords')));
+    }
+
+    /**
+     * Prints the headers and search bar if required
+     */
+    function print_headers() {
+        $headerset = false;
+        foreach ($this->headers as $header) {
+            if ($header !== null) {
+                $headerset = true;
+            }
+        }
+
+        if ($headerset) {
+            return parent::print_headers();
+        }
+
+        if (array_key_exists('top', $this->toolbar)) {
+            echo html_writer::start_tag('thead');
+            $this->print_extended_headers();
+            echo html_writer::end_tag('thead');
+        }
     }
 
     /**

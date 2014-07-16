@@ -1,7 +1,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -180,8 +180,10 @@ M.totara_cohortprogramcompletion = M.totara_cohortprogramcompletion || {
             var completionevent = this._dialog.completionevent.val();
             var completioninstance = this._dialog.completioninstance.val();
 
-            if (completionevent == M.totara_cohortprogramcompletion.config.COMPLETION_EVENT_NONE) {
-                if (completiontime != M.totara_cohortprogramcompletion.config.COMPLETION_TIME_NOT_SET) {
+            if (typeof completionevent === 'undefined' ||
+                completionevent == M.totara_cohortprogramcompletion.config.COMPLETION_EVENT_NONE) {
+                if (typeof completionevent === 'undefined' ||
+                    completiontime != M.totara_cohortprogramcompletion.config.COMPLETION_TIME_NOT_SET) {
                     $('.completiontime').val(completiontime);
                 }
             } else {
@@ -189,6 +191,8 @@ M.totara_cohortprogramcompletion = M.totara_cohortprogramcompletion || {
                 $('#timeamount').val(parts[0]);
                 $('#timeperiod').val(parts[1]);
                 $('#eventtype').val(completionevent);
+                $('#instance').val(completioninstance);
+                $('#instancetitle').text(completioneventname);
             }
         }
 
@@ -233,19 +237,34 @@ M.totara_cohortprogramcompletion = M.totara_cohortprogramcompletion || {
                 $('#instancetitle').text('');
             }
 
-            this.set_to_none = function() {
+            $(document).on('change', '#eventtype', function() {
                 $('#instance').val(0);
                 $('#instancetitle').text(M.util.get_string('none', 'moodle'));
-            }
+            });
         }
 
-        /// init the completion dialogs
+        // Store the current completion name (contained between the single quotes).
+        var completioneventname;
+
+        // Init the completion dialogs.
         totaraDialogs['completion'] = new totaraDialog_completion();
         $(document).on('click', '.completionlink', function(event){
             event.preventDefault();
             var td = $(this).parent('td');
 
             var dialog = totaraDialogs['completion'];
+
+            var i, completionname = $(this).text(); // Get the completion name currently selected.
+
+            completioneventname = '';
+            // Check if the completion name contains single quotes.
+            if (completionname.indexOf("'") != -1) {
+                // Get the name contained between the single quotes.
+                completionname = completionname.substring(completionname.indexOf("'"))
+                for (i=1; i<completionname.length-1; i++) {
+                    completioneventname = completioneventname + completionname[i];
+                }
+            }
 
             dialog.cohortid = M.totara_cohortprogramcompletion.config.cohortid;
             dialog.programid = $('input[name^="programid"]', td).val();
@@ -258,7 +277,7 @@ M.totara_cohortprogramcompletion = M.totara_cohortprogramcompletion || {
             dialog.default_url = M.cfg.wwwroot + '/totara/program/assignment/set_completion.php';
             totaraDialogs['completion'].open();
         });
-        // Add handler to remove completion dates
+        // Add handler to remove completion dates.
         $(document).on('click', '.deletecompletiondatelink', function(event) {
             event.preventDefault();
             var dialog = totaraDialogs['completion'];
@@ -275,5 +294,5 @@ M.totara_cohortprogramcompletion = M.totara_cohortprogramcompletion || {
         });
         totaraDialogs['completionevent'] = new totaraDialog_completion_event();
 
-    }  // init
+    }  // Init.
 }

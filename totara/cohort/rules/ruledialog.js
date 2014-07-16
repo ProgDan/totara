@@ -1,7 +1,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -99,17 +99,19 @@ M.totara_cohortrules = M.totara_cohortrules || {
              var type = radioname;
              var id = '';
 
-             if (radioname === 'cohortoperator') {
+            if (radioname === 'cohortoperator') {
                 id = cohortid;
-             } else {
-                 type = 'resultsetoperator';
+             } else if (radioname.substr(0, 15) === 'rulesetoperator') {
+                 type = 'rulesetoperator';
                  // Pattern for ruleset operators. e.g. rulesetoperator[422]
                  var match = radioname.match(/\[(\d+)\]/);
                  if (match) {
                      id = match[1];
                  }
+             } else {
+                 return;
              }
-             // Updating operators via AJAX
+             // Updating operators via AJAX.
              $.ajax({
                  type: "POST",
                  url: M.cfg.wwwroot + '/totara/cohort/rules/updateoperator.php',

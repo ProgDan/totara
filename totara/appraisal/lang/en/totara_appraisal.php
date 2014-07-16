@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -107,6 +107,7 @@ $string['completebystage_help'] = 'Leave the dates empty if you don\'t know them
 $string['completed'] = 'Completed';
 $string['completedon'] = 'This appraisal was completed on {$a}';
 $string['completestage'] = 'Complete Stage';
+$string['configenableappraisals'] = 'If not checked, navigation links to Appraisals will not be shown';
 $string['confirmactivateappraisal'] = 'Do you really want to activate this appraisal?';
 $string['confirmcloseappraisal'] = 'Do you really want to close this appraisal?';
 $string['confirmdeleteappraisal'] = 'Do you really want to remove this appraisal?';
@@ -141,6 +142,7 @@ $string['downloadnow'] = 'Download now';
 $string['draft'] = 'Draft';
 $string['editpageheading'] = 'Edit page';
 $string['editstageheading'] = 'Edit stage';
+$string['enableappraisals'] = 'Show Appraisals';
 $string['example:appraisalname'] = 'Example appraisal';
 $string['example:appraisaldescription'] = '<p>This is an example appraisal. You can use this as a starting point for building your own appraisal or just browse around to see how the functionality works.</p><p>If you don\'t need it, just delete it and create your own.</p>';
 $string['example:scaleyesnoname'] = 'Yes or no';

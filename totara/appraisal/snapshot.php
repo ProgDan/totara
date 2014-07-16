@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,16 +84,22 @@ $assignments = $appraisal->get_all_assignments($subjectid);
 $otherassignments = $assignments;
 unset($otherassignments[$roleassignment->appraisalrole]);
 
+$PAGE->set_url(new moodle_url('/totara/appraisal/snapshot.php', array('role' => $role,
+    'subjectid' => $subjectid, 'appraisalid' => $appraisalid, 'action' => $action)));
+
 $PAGE->set_pagelayout('popup');
+$CFG->themeorder = array('default');
+
 $renderer = $PAGE->get_renderer('totara_appraisal');
 $PAGE->requires->js_init_code('window.print()', true);
-
 $heading = get_string('myappraisals', 'totara_appraisal');
 $PAGE->set_title($heading);
 $PAGE->set_heading($heading);
+$nouserpic = false;
 
 if ($action == 'snapshot') {
     $ob_was = 0;
+    $nouserpic = true;
     $ob_level = ob_get_level();
     // IIS always return true for ob_get_level().
     while ($ob_level != $ob_was && $ob_level > 0) {
@@ -134,7 +140,7 @@ foreach ($stageslist as $stageid => $stagedata) {
             // Print form.
             $form = new appraisal_answer_form(null, array('appraisal' => $appraisal, 'page' => $page,
             'userassignment' => $userassignment, 'roleassignment' => $roleassignment,
-            'otherassignments' => $otherassignments, 'spaces' => $spaces,
+            'otherassignments' => $otherassignments, 'spaces' => $spaces, 'nouserpic' => $nouserpic,
             'action' => 'print', 'preview' => false, 'islastpage' => false, 'readonly' => true));
 
             foreach ($assignments as $assignment) {

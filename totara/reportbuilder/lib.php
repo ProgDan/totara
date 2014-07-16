@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -147,7 +147,7 @@ class reportbuilder {
     public $columnoptions, $_filtering, $contentoptions, $contentmode, $embeddedurl, $description;
     public $_id, $recordsperpage, $defaultsortcolumn, $defaultsortorder;
     private $_joinlist, $_base, $_params, $_sid;
-    private $_paramoptions, $_embeddedparams, $_fullcount, $_filteredcount;
+    private $_paramoptions, $_embeddedparams, $_fullcount, $_filteredcount, $_isinitiallyhidden;
     public $src, $grouped, $reportfor, $badcolumns, $embedded;
     private $_post_config_restrictions;
 
@@ -414,7 +414,6 @@ class reportbuilder {
      */
     function debug($level=1) {
         global $OUTPUT;
-        $context = context_system::instance();
         if (!is_siteadmin()) {
             return false;
         }
@@ -965,7 +964,7 @@ class reportbuilder {
                  * directly. */
                 if ($column->customheading) {
                     // Use value from database.
-                    $heading = $column->heading;
+                    $heading = format_string($column->heading);
                 } else {
                     // Use default value.
                     $defaultheadings = $this->get_default_headings_array();
@@ -2516,7 +2515,8 @@ class reportbuilder {
                 } else {
                     // We still need to add extrafields to the GROUP BY if there is a displayfunc
                     if ($column->extrafields !== null && $column->displayfunc !== null) {
-                        foreach ($column->extrafields as $alias => $field) {
+                        foreach ($column->extrafields as $name => $field) {
+                            $alias = reportbuilder_get_extrafield_alias($column->type, $column->value, $name);
                             $gp = ($mode == rb_column::CACHE || $mode == rb_column::ALIASONLY) ? $alias : $field;
                             if (!in_array($gp, $group)) {
                                 $group[] = $gp;
@@ -2589,7 +2589,12 @@ class reportbuilder {
     function get_full_count() {
         global $DB;
 
-        // use cached value if present
+        // Don't do the calculation if the results are initially hidden.
+        if ($this->is_initially_hidden()) {
+            return 0;
+        }
+
+        // Use cached value if present.
         if (empty($this->_fullcount)) {
             list($sql, $params) = $this->build_query(true);
             $this->_fullcount = $DB->count_records_sql($sql, $params);
@@ -2605,7 +2610,12 @@ class reportbuilder {
     function get_filtered_count() {
         global $DB;
 
-        // use cached value if present
+        // Don't do the calculation if the results are initially hidden.
+        if ($this->is_initially_hidden()) {
+            return 0;
+        }
+
+        // Use cached value if present.
         if (empty($this->_filteredcount)) {
             list($sql, $params) = $this->build_query(true, true);
             $this->_filteredcount = $DB->count_records_sql($sql, $params);
@@ -2660,13 +2670,16 @@ class reportbuilder {
      * @return No return value but prints the current data table
      */
     function display_table() {
-        global $SESSION, $DB, $OUTPUT;
+        global $DB, $OUTPUT;
+
+        if ($this->is_initially_hidden()) {
+            echo get_string('initialdisplay_pending', 'totara_reportbuilder');
+            return;
+        }
 
         define('DEFAULT_PAGE_SIZE', $this->recordsperpage);
         define('SHOW_ALL_PAGE_SIZE', 9999);
-        $spage     = optional_param('spage', 0, PARAM_INT);                    // which page to show
         $perpage   = optional_param('perpage', DEFAULT_PAGE_SIZE, PARAM_INT);
-        $ssort     = optional_param('ssort', '', PARAM_TEXT);
 
         $columns = $this->columns;
         $shortname = $this->shortname;
@@ -2796,6 +2809,24 @@ class reportbuilder {
     }
 
     /**
+     * Determine if the report should be hidden due to the initialdisplay setting.
+     */
+    public function is_initially_hidden() {
+        if (isset($this->_isinitiallyhidden)) {
+            return $this->_isinitiallyhidden;
+        }
+
+        $searched = optional_param_array('submitgroup', array(), PARAM_ALPHANUM);
+        $override_initial = isset($searched['addfilter']);
+        $this->_isinitiallyhidden = ($this->initialdisplay == RB_INITIAL_DISPLAY_HIDE &&
+                !$override_initial &&
+                !$this->is_report_filtered());
+
+        return $this->_isinitiallyhidden;
+    }
+
+
+    /**
      * Get column identifiers of columns that should be hidden on page load
      * The hidden columns are stored in the session
      *
@@ -2856,7 +2887,7 @@ class reportbuilder {
      * functions exist for any columns the data is passed to the display
      * function and the result included instead.
      *
-     * @param array $record A record returnd by a recordset
+     * @param object $record A record returned by a recordset
      * @param boolean $striptags If true, returns the data with any html tags removed
      * @param boolean $isexport If true, data is being exported
      * @param boolean $excel true if processing data for an export_xls
@@ -2865,7 +2896,6 @@ class reportbuilder {
      */
     function process_data_row($record, $striptags=false, $isexport=false, $excel=false) {
         $columns = $this->columns;
-        $columnoptions = $this->columnoptions;
 
         $tabledata = array();
         foreach ($columns as $column) {
@@ -2878,12 +2908,14 @@ class reportbuilder {
                 if (isset($column->displayfunc)) {
                     $func = 'rb_display_'.$column->displayfunc;
                     if (method_exists($this->src, $func)) {
+                        // Get extrafields for column and rename them before passing them to display function.
+                        $extrafields = $this->get_extrafields_row($record, $column);
                         if ($column->displayfunc == 'customfield_textarea' || $column->displayfunc == 'customfield_file' || $column->displayfunc == 'tinymce_textarea') {
-                            $tabledata[] = $this->src->$func($field, $record->$field, $record, $isexport);
+                            $tabledata[] = $this->src->$func($field, $record->$field, $extrafields, $isexport);
                         } else if (($column->displayfunc == 'nice_date' || $column->displayfunc == 'nice_datetime') && $excel) {
                             $tabledata[] = $record->$field;
                         } else {
-                            $tabledata[] = $this->src->$func(format_text($record->$field, FORMAT_HTML), $record, $isexport);
+                            $tabledata[] = $this->src->$func(format_text($record->$field, FORMAT_HTML), $extrafields, $isexport);
                         }
                     } else {
                         $tabledata[] = format_text($record->$field, FORMAT_HTML);
@@ -3458,7 +3490,7 @@ class reportbuilder {
             }
 
             $key = $filter->type . '-' . $filter->value;
-            $ret[$section][$key] = $filter->label;
+            $ret[$section][$key] = format_string($filter->label);
         }
         return $ret;
     }
@@ -3503,7 +3535,7 @@ class reportbuilder {
             }
 
             $key = $column->type . '-' . $column->value;
-            $ret[$section][$key] = $column->name;
+            $ret[$section][$key] = format_string($column->name);
         }
         return $ret;
     }
@@ -3761,6 +3793,11 @@ class reportbuilder {
      */
     function print_feedback_results() {
         global $DB, $OUTPUT;
+
+        if ($this->is_initially_hidden()) {
+            return get_string('initialdisplay_pending', 'totara_reportbuilder');
+        }
+
         // get paging parameters
         define('DEFAULT_PAGE_SIZE', $this->recordsperpage);
         define('SHOW_ALL_PAGE_SIZE', 9999);
@@ -3856,12 +3893,16 @@ class reportbuilder {
                 if (isset($primary_field->displayfunc)) {
                     $func = 'rb_display_' . $primary_field->displayfunc;
                     if (method_exists($this->src, $func)) {
-                        $primaryvalue = $this->src->$func(format_text($item->$primaryname, FORMAT_HTML), $item, false);
+                        // Get extrafields for column and rename them before passing them to display function.
+                        $extrafields = $this->get_extrafields_row($item, $primary_field);
+                        $primaryvalue = $this->src->$func(format_text($item->$primaryname, FORMAT_HTML), $extrafields, false);
                     } else {
-                        $primaryvalue = (isset($item->$primaryname)) ? format_text($item->$primaryname, FORMAT_HTML) : get_string('unknown', 'totara_reportbuilder');
+                        $primaryvalue = (isset($item->$primaryname)) ? format_text($item->$primaryname, FORMAT_HTML) :
+                                get_string('unknown', 'totara_reportbuilder');
                     }
                 } else {
-                    $primaryvalue = (isset($item->$primaryname)) ? format_text($item->$primaryname, FORMAT_HTML) : get_string('unknown', 'totara_reportbuilder');
+                    $primaryvalue = (isset($item->$primaryname)) ? format_text($item->$primaryname, FORMAT_HTML) :
+                            get_string('unknown', 'totara_reportbuilder');
                 }
 
                 $out .= $OUTPUT->heading($primaryheading . ': ' . $primaryvalue, 2);
@@ -4059,6 +4100,34 @@ class reportbuilder {
             return array('', array());
         }
         return $this->_post_config_restrictions;
+    }
+
+    /**
+     * Get extrafields for a column from a database record.
+     * This removes the stuff that was added to make the name unique when processed in a query.
+     *
+     * @param object $row record returned from sql query
+     * @param rb_column $column which has a display function with extra fields (else returns empty array)
+     * @return object $extrafieldsrow only the extrafields specified by the column, with unique identifier removed.
+     */
+    private function get_extrafields_row($row, $column) {
+        $extrafieldsrow = new stdClass();
+
+        if (!isset($column->extrafields) || empty($column->extrafields)) {
+            return $extrafieldsrow;
+        }
+
+        $extrafields = $column->extrafields;
+        foreach ($extrafields as $extrafield => $value) {
+            $extrafieldalias = reportbuilder_get_extrafield_alias($column->type, $column->value, $extrafield);
+            if (isset($row->$extrafieldalias)) {
+                $extrafieldsrow->$extrafield = $row->$extrafieldalias;
+            } else {
+                $extrafieldsrow->$extrafield = null;
+            }
+        }
+
+        return $extrafieldsrow;
     }
 
 } // End of reportbuilder class
@@ -5062,4 +5131,22 @@ function totara_reportbuilder_pluginfile($course, $cm, $context, $filearea, $arg
     }
     // finally send the file
     send_stored_file($file, 86400, 0, true, $options); // download MUST be forced - security!
+}
+
+/**
+ * Get extrafield alias.
+ * Hash type and value so it works when caching reports in MySQL
+ * (current restriction in MySQL: fieldname cannot be longer than 64 chars)
+ *
+ * @param string $type column type of this option in the report
+ * @param string $value column value of this option in the report
+ * @param string $name the field name
+ * @return string $extrafieldalias
+ */
+function reportbuilder_get_extrafield_alias($type, $value, $name) {
+    $typevalue = "{$type}_{$value}";
+    $hashtypevalue = substr(md5($typevalue), 0, 10);
+    $extrafieldalias = "ef_{$hashtypevalue}_{$name}";
+
+    return $extrafieldalias;
 }

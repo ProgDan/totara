@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ if ($add) {
         $currentassignments = $baseclass->get_current_assigned_groups();
         // Pass to the module renderer.
         $output = $PAGE->get_renderer("totara_hierarchy");
-        $out .= $output->print_goal_view_assignments($item, true, $currentassignments);
+        $out .= $output->print_goal_view_assignments($item, true, $currentassignments, true);
 
     }
     echo "DONE$out";

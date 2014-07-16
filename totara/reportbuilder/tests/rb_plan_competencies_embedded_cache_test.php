@@ -2,11 +2,11 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -125,20 +125,22 @@ class rb_plan_competencies_embedded_cache_test extends reportcache_advanced_test
         if ($usecache) {
             $this->enable_caching($this->report_builder_data['id']);
         }
+        $planidalias = reportbuilder_get_extrafield_alias('plan', 'planlink', 'plan_id');
+        $competencyidalias = reportbuilder_get_extrafield_alias('competency', 'proficiencyandapproval', 'competencyid');
         $result = $this->get_report_result($this->report_builder_data['shortname'],
                             array('userid' => $this->user1->id), $usecache);
         $this->assertCount(1, $result);
         $r = array_shift($result);
-        $this->assertEquals($this->plan1->id, $r->plan_id);
-        $this->assertEquals($this->competency1->id, $r->competencyid);
+        $this->assertEquals($this->plan1->id, $r->$planidalias);
+        $this->assertEquals($this->competency1->id, $r->$competencyidalias);
 
         $result = $this->get_report_result($this->report_builder_data['shortname'],
                             array('userid' => $this->user2->id), $usecache);
         $this->assertCount(2, $result);
         $was = array('');
         foreach($result as $r) {
-            $this->assertContains($r->competencyid, array($this->competency2->id, $this->competency3->id));
-            $this->assertEquals($this->plan2->id, $r->plan_id);
+            $this->assertContains($r->$competencyidalias, array($this->competency2->id, $this->competency3->id));
+            $this->assertEquals($this->plan2->id, $r->$planidalias);
             $this->assertNotContains($r->competency_fullname, $was);
             $was[] = $r->competency_fullname;
         }

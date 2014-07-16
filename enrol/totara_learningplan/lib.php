@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -97,6 +97,31 @@ class enrol_totara_learningplan_plugin extends enrol_plugin {
             }
             return $OUTPUT->container($form, 'plan_box plan_box_action') . $OUTPUT->continue_button($destination);
         }
+    }
+
+    /**
+     * Attempt to automatically enrol current user in course without any interaction,
+     * calling code has to make sure the plugin and instance are active.
+     *
+     * This should return either a timestamp in the future or false.
+     *
+     * @param stdClass $instance course enrol instance
+     * @return bool|int false means not enrolled, integer means timeend
+     */
+    public function try_autoenrol(stdClass $instance) {
+        global $OUTPUT, $USER, $DB;
+
+        $course = $DB->get_record('course', array('id' => $instance->courseid));
+        if ($this->is_user_approved($instance->courseid)) {
+            // Get default roleid.
+            $instance->roleid = parent::get_config('roleid');
+            parent::enrol_user($instance, $USER->id, $instance->roleid);
+
+            totara_set_notification($OUTPUT->container(get_string('nowenrolled', 'enrol_totara_learningplan', $course->fullname), 'plan_box'), null, array('class' => 'notifysuccess'));
+            // No time limit on Plan enrolment.
+            return 0;
+        }
+        return false;
     }
 
     /**

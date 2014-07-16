@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ if (!$user = $DB->get_record('user', array('id' => $userid))) {
     print_error('error:usernotfound', 'totara_core');
 }
 
-// users can only view their own and their staff's pages
+// Users can only view their own and their staff's pages.
 if ($USER->id != $userid && !totara_is_manager($userid) && !is_siteadmin()) {
     print_error('error:cannotviewthispage', 'totara_core');
 }
@@ -111,7 +111,7 @@ include('booking_tabs.php');
 $countfiltered = $report->get_filtered_count();
 $countall = $report->get_full_count();
 
-// display heading including filtering stats
+// Display heading including filtering stats.
 $heading = $strheading . ': ' .
     $output->print_result_count_string($countfiltered, $countall);
 echo $OUTPUT->heading($heading);
@@ -125,12 +125,12 @@ echo $report->display_saved_search_options();
 
 echo html_writer::empty_tag('br');
 
-if ($countfiltered > 0) {
-    print $output->showhide_button($report->_id, $report->shortname);
-    $report->display_table();
-    // export button
-    $output->export_select($report->_id, $sid);
-}
+print $output->showhide_button($report->_id, $report->shortname);
+
+$report->display_table();
+
+// Export button.
+$output->export_select($report->_id, $sid);
 
 echo $OUTPUT->footer();
 

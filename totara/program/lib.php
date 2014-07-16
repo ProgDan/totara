@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -159,7 +159,7 @@ function prog_get_certification_programs($userid, $sort='', $limitfrom='', $limi
 
     // Construct sql query
     $count = 'SELECT COUNT(*) ';
-    $select = 'SELECT p.id, p.fullname, p.fullname AS progname, pc.timedue AS duedate, cfc.certifpath, cfc.timeexpires ';
+    $select = 'SELECT p.id, p.fullname, p.fullname AS progname, pc.timedue AS duedate, cfc.certifpath, cfc.status, cfc.timeexpires ';
     $from = "FROM {prog} p
             INNER JOIN {prog_completion} pc ON p.id = pc.programid
                     AND pc.coursesetid = 0
@@ -329,11 +329,7 @@ function prog_display_certification_programs($userid) {
         }
         $row = array();
         $row[] = $program->display_summary_widget($userid);
-        if ($cp->certifpath == CERTIFPATH_CERT) {
-            $row[] = ($cp->duedate ? $program->display_duedate($cp->duedate) : get_string('noduedate', 'totara_program'));
-        } else {
-            $row[] = $program->display_date_as_text($cp->timeexpires);
-        }
+        $row[] = $program->display_duedate($cp->duedate, $cp->certifpath, $cp->status);
         $row[] = $program->display_progress($userid);
         $table->add_data($row);
         $rowcount++;
@@ -425,8 +421,12 @@ function prog_add_required_learning_base_navlinks($userid) {
 /**
  * Returns list of programs, for whole site, or category
  *
+ * Note: Cannot use p.* in $fields because MSSQL does not handle DISTINCT text fields.
+ * See T-11732
  */
-function prog_get_programs($categoryid="all", $sort="p.sortorder ASC", $fields="p.*", $type = 'program', $options = array()) {
+function prog_get_programs($categoryid="all", $sort="p.sortorder ASC",
+                           $fields="p.id, p.category, p.sortorder, p.shortname, p.fullname, p.visible, p.icon, p.audiencevisible",
+                           $type = 'program', $options = array()) {
     global $USER, $DB, $CFG;
     require_once($CFG->dirroot . '/totara/cohort/lib.php');
 
@@ -1024,7 +1024,7 @@ function prog_get_programs_search($searchterms, $sort='fullname ASC', $page=0, $
             }
         }
 
-        if ($program->visible || has_capability('totara/program:viewhiddenprograms', program_get_context($program->id))) {
+        if ($program->is_viewable($USER->id) || $program->user_is_assigned($USER->id)) {
             // Don't exit this loop till the end we need to count all the visible programs to update $totalcount.
             if ($c >= $limitfrom && $c < $limitto) {
                 $programs[] = $program;
@@ -1458,6 +1458,8 @@ function prog_process_extensions($extensions) {
  * @param program $program if not set - all programs will be updated
  */
 function prog_update_completion($userid, program $program = null) {
+    global $DB;
+
     if (!$program) {
         $proglist = prog_get_all_programs($userid);
         $programs = array();
@@ -1527,9 +1529,16 @@ function prog_update_completion($userid, program $program = null) {
 
         // Courseset_group_completed will be true if all the course groups in the program have been completed.
         if ($courseset_group_completed) {
+            //Get the completion date of the last courseset to use in program completion
+            $sql = "SELECT MAX(timecompleted) as timecompleted
+                    FROM {prog_completion}
+                    WHERE coursesetid != 0 AND programid = ?";
+            $params = array($program->id);
+            $coursesetcompletion = $DB->get_record_sql($sql, $params);
+
             $completionsettings = array(
                 'status'        => STATUS_PROGRAM_COMPLETE,
-                'timecompleted' => time()
+                'timecompleted' => $coursesetcompletion->timecompleted
                 );
             $program->update_program_complete($userid, $completionsettings);
         }

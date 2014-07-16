@@ -2,11 +2,11 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -286,7 +286,9 @@ class reportcache_testing_data_generator extends testing_data_generator {
      * @return stdClass Program record
      */
     public function create_plan($userid, $record = array()) {
-        global $DB;
+        global $DB, $CFG;
+        require_once($CFG->dirroot . '/totara/plan/lib.php');
+
         if (is_object($record)) {
             $record = (array)$record;
         }

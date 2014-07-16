@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,7 +33,10 @@ $string['cannotmovefiles'] = 'Cannot move file from {$a->fromfile} to {$a->tofil
 $string['cannotsaveupload'] = 'Cannot save file to {$a}';
 $string['certification_results'] = 'Certification results';
 $string['certificationblankrefs'] = 'Blank certification shortname and certification ID number';
+$string['certificationexpired'] = 'Import certification expired, skipping importing';
+$string['certificationdueforrecert'] = 'Import certification due for renewal, skipping import';
 $string['choosefile'] = 'Choose file to upload';
+$string['completiondatesame'] = 'Record completion date exists';
 $string['completionimport'] = 'Upload Completion Records';
 $string['completionimport_certification'] = 'Completion import: Certification status';
 $string['completionimport_course'] = 'Completion import: Course status';
@@ -46,7 +49,8 @@ $string['csvencoding'] = 'CSV File encoding';
 $string['csvimportdone'] = 'CSV import completed';
 $string['csvimportfailed'] = 'Failed to import the CSV file';
 $string['csvseparator'] = 'CSV Values separated by';
-$string['dataimportdone'] = '{$a} data imported successfully';
+$string['dataimportdone_certification'] = 'Certification data imported successfully';
+$string['dataimportdone_course'] = 'Course data imported successfully';
 $string['duplicate'] = 'Duplicate';
 $string['duplicateidnumber'] = 'Duplicate ID Number';
 $string['emptyfile'] = 'File is empty : {$a}';
@@ -90,7 +94,6 @@ $string['importnone'] = 'No records were imported';
 $string['importnotready'] = 'Import not ready, please check the errors above';
 $string['importresults'] = 'Import results';
 $string['importsource'] = 'Import source';
-$string['importsuccess'] = 'Imported all records successfully';
 $string['importtotal'] = '{$a} Records in total';
 $string['invalidcompletiondate'] = 'Invalid completion date';
 $string['invalidfilenames'] = 'These are invalid filenames and will be ignored : {$a}';
@@ -101,6 +104,8 @@ $string['nomanualenrol'] = 'Course needs to have manual enrol';
 $string['nousername'] = 'No user name';
 $string['nocourse'] = 'No course';
 $string['nothingtoimport'] = 'No pending files to import';
+$string['overrideactivecertification'] = 'Override active certifications';
+$string['overrideactivecourse'] = 'Override current course completions';
 $string['pluginname'] = 'Completion History Import';
 $string['report_certification'] = 'Certification import report';
 $string['report_course'] = 'Course import report';

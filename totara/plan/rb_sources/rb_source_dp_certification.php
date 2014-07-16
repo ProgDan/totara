@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  * Copyright (C) 1999 onwards Martin Dougiamas
  *
  * This program is free software; you can redistribute it and/or modify
@@ -49,7 +49,7 @@ class rb_source_dp_certification extends rb_base_source {
         $this->contentoptions = $this->define_contentoptions();
         $this->paramoptions = $this->define_paramoptions();
         $this->defaultcolumns = $this->define_defaultcolumns();
-        $this->defaultfilters = array();
+        $this->defaultfilters = $this->define_defaultfilters();
         $this->requiredcolumns = array();
         $this->sourcetitle = get_string('sourcetitle', 'rb_source_dp_certification');
         $this->sourcewhere = '(base.certifid > 0)';
@@ -89,11 +89,39 @@ class rb_source_dp_certification extends rb_base_source {
         $joinlist[] = new rb_join(
                 'certif_completion',
                 'INNER',
-                '{certif_completion}',
-                '(certif_completion.certifid = base.certifid
-                        AND certif_completion.userid = prog_completion.userid)',
+                '(SELECT ' . $DB->sql_concat("'active'", 'cc.id') . ' AS uniqueid,
+                        cc.id,
+                        cc.certifid,
+                        cc.userid,
+                        cc.certifpath,
+                        cc.status,
+                        cc.renewalstatus,
+                        cc.timewindowopens,
+                        cc.timeexpires,
+                        cc.timecompleted,
+                        cc.timemodified,
+                        0 as unassigned
+                    FROM {certif_completion} cc
+                    UNION
+                    SELECT ' . $DB->sql_concat("'history'", 'cch.id') . ' AS uniqueid,
+                        cch.id,
+                        cch.certifid,
+                        cch.userid,
+                        cch.certifpath,
+                        cch.status,
+                        cch.renewalstatus,
+                        cch.timewindowopens,
+                        cch.timeexpires,
+                        cch.timecompleted,
+                        cch.timemodified,
+                        cch.unassigned
+                    FROM {certif_completion_history} cch
+                    LEFT JOIN {certif_completion} cc ON cc.certifid = cch.certifid AND cc.userid = cch.userid
+                    WHERE cch.unassigned = 1
+                    AND cc.id IS NULL)',
+                '(certif_completion.certifid = base.certifid)',
                 REPORT_BUILDER_RELATION_ONE_TO_MANY,
-                array('base', 'prog_completion')
+                array('base')
         );
 
         $joinlist[] = new rb_join(
@@ -104,6 +132,7 @@ class rb_source_dp_certification extends rb_base_source {
                     certifid,
                     COUNT(id) AS historycount
                     FROM {certif_completion_history}
+                    WHERE unassigned = 0
                     GROUP BY userid, certifid)',
                 '(certif_completion_history.certifid = base.certifid
                     AND certif_completion_history.userid = certif_completion.userid)',
@@ -112,17 +141,22 @@ class rb_source_dp_certification extends rb_base_source {
         );
 
         $joinlist[] =  new rb_join(
-                'prog_completion', // table alias
-                'INNER', // type of join
+                'prog_completion', // Table alias.
+                'LEFT', // Type of join.
                 '{prog_completion}',
-                'base.id = prog_completion.programid AND prog_completion.coursesetid = 0', // zero = the program
+                '(prog_completion.programid = base.id
+                    AND prog_completion.coursesetid = 0
+                    AND prog_completion.userid = certif_completion.userid)',
                 REPORT_BUILDER_RELATION_ONE_TO_MANY,
-                array('base')
+                array('base', 'certif_completion')
         );
 
         $this->add_course_category_table_to_joinlist($joinlist, 'base', 'category');
         $this->add_cohort_program_tables_to_joinlist($joinlist, 'base', 'id');
-//         $this->add_user_table_to_joinlist($joinlist, 'certif_completion', 'userid');
+        $this->add_user_table_to_joinlist($joinlist, 'certif_completion', 'userid');
+        $this->add_position_tables_to_joinlist($joinlist, 'certif_completion', 'userid');
+        $this->add_manager_tables_to_joinlist($joinlist, 'position_assignment', 'reportstoid');
+        $this->add_cohort_user_tables_to_joinlist($joinlist, 'certif_completion', 'userid');
 
         return $joinlist;
     }
@@ -203,7 +237,8 @@ class rb_source_dp_certification extends rb_base_source {
                     'joins' => array('prog_completion', 'certif_completion'),
                     'displayfunc' => 'timedue_date',
                     'extrafields' => array(
-                        'completionstatus' => 'prog_completion.status',
+                        'prog_completion_timedue' => 'prog_completion.timedue',
+                        'status' => 'certif_completion.status',
                         'programid' => 'base.id',
                         'certifpath' => 'certif_completion.certifpath',
                         'timeexpires' => 'certif_completion.timeexpires',
@@ -229,7 +264,10 @@ class rb_source_dp_certification extends rb_base_source {
                 'certif_completion.status',
                 array(
                     'joins' => 'certif_completion',
-                    'displayfunc' => 'certif_status'
+                    'displayfunc' => 'certif_status',
+                    'extrafields' => array(
+                        'unassigned' => 'certif_completion.unassigned'
+                    )
                 )
         );
 
@@ -240,7 +278,10 @@ class rb_source_dp_certification extends rb_base_source {
                 'certif_completion.renewalstatus',
                 array(
                     'joins' => 'certif_completion',
-                    'displayfunc' => 'certif_renewalstatus'
+                    'displayfunc' => 'certif_renewalstatus',
+                    'extrafields' => array(
+                        'unassigned' => 'certif_completion.unassigned'
+                    )
                 )
         );
 
@@ -273,12 +314,12 @@ class rb_source_dp_certification extends rb_base_source {
         );
 
         $columnoptions[] = new rb_column_option(
-                'prog_completion',
+                'certif_completion',
                 'timecompleted',
                 get_string('timecompleted', 'rb_source_dp_certification'),
-                'prog_completion.timecompleted',
+                'certif_completion.timecompleted',
                 array(
-                    'joins' => 'prog_completion',
+                    'joins' => 'certif_completion',
                     'displayfunc' => 'nice_date'
                 )
         );
@@ -324,8 +365,11 @@ class rb_source_dp_certification extends rb_base_source {
             )
         );
 
-        // include some standard columns
-//         $this->add_user_fields_to_columns($columnoptions);
+        // Include some standard columns.
+        $this->add_user_fields_to_columns($columnoptions);
+        $this->add_position_fields_to_columns($columnoptions);
+        $this->add_manager_fields_to_columns($columnoptions);
+        $this->add_cohort_user_fields_to_columns($columnoptions);
         $this->add_course_category_fields_to_columns($columnoptions, 'course_category', 'base');
 
         return $columnoptions;
@@ -422,7 +466,7 @@ class rb_source_dp_certification extends rb_base_source {
         );
 
         $filteroptions[] = new rb_filter_option(
-                'prog_completion',
+                'certif_completion',
                 'timecompleted',
                 get_string('timecompleted', 'rb_source_dp_certification'),
                 'date'
@@ -435,6 +479,10 @@ class rb_source_dp_certification extends rb_base_source {
                 'number'
         );
 
+        $this->add_user_fields_to_filters($filteroptions);
+        $this->add_position_fields_to_filters($filteroptions);
+        $this->add_manager_fields_to_filters($filteroptions);
+        $this->add_cohort_user_fields_to_filters($filteroptions);
         $this->add_course_category_fields_to_filters($filteroptions);
 
         return $filteroptions;
@@ -467,7 +515,7 @@ class rb_source_dp_certification extends rb_base_source {
         // OR status = ' . CERTIFSTATUS_EXPIRED . '
         $paramoptions[] = new rb_param_option(
                 'rolstatus',
-                '(CASE WHEN prog_completion.status = ' . STATUS_PROGRAM_COMPLETE . ' THEN \'completed\' ELSE \'active\' END)',
+                '(CASE WHEN prog_completion.status = ' . STATUS_PROGRAM_COMPLETE . ' OR certif_completion.unassigned = 1 THEN \'completed\' ELSE \'active\' END)',
                 'prog_completion',
                 'string'
         );
@@ -483,6 +531,10 @@ class rb_source_dp_certification extends rb_base_source {
     protected function define_defaultcolumns() {
         $defaultcolumns = array(
             array(
+                'type' => 'user',
+                'value' => 'namelink',
+            ),
+            array(
                 'type' => 'base',
                 'value' => 'fullnamelink',
             ),
@@ -497,11 +549,16 @@ class rb_source_dp_certification extends rb_base_source {
     protected function define_defaultfilters() {
         $defaultfilters = array(
             array(
+                'type' => 'user',
+                'value' => 'fullname',
+                'advanced' => 0,
+            ),
+            array(
                 'type' => 'base',
                 'value' => 'fullname',
                 'advanced' => 0,
             ),
-        array(
+            array(
                 'type' => 'course_category',
                 'value' => 'id',
                 'advanced' => 0,
@@ -518,13 +575,26 @@ class rb_source_dp_certification extends rb_base_source {
 
 
     function rb_display_timedue_date($time, $row) {
-        $dateformat = get_string('strfdateshortmonth', 'langconfig');
-        if ($row->certifpath == CERTIFPATH_CERT) {
-            $program = new program($row->programid);
-            return $program->display_timedue_date($row->completionstatus, $time, $dateformat);
+        global $OUTPUT;
+
+        $program = new program($row->programid);
+
+        if (empty($row->timeexpires)) {
+            if (empty($row->prog_completion_timedue) || $row->prog_completion_timedue == COMPLETION_TIME_NOT_SET) {
+                // There is no time due set.
+                return get_string('duedatenotset', 'totara_program');
+            } else if ($row->prog_completion_timedue > time() && $row->certifpath == CERTIFPATH_CERT) {
+                // User is still in the first stage of certification, not overdue yet.
+                return $program->display_duedate($row->prog_completion_timedue, $row->certifpath, $row->status);
+            } else {
+                // Looks like the certification has expired, overdue!
+                return $OUTPUT->error_text(get_string('overdue', 'totara_program'));
+            }
         } else {
-            return userdate($row->timeexpires, $dateformat);
+            return $program->display_duedate($row->timeexpires, $row->certifpath, $row->status);
         }
+
+        return '';
     }
 
 
@@ -535,19 +605,27 @@ class rb_source_dp_certification extends rb_base_source {
         if (!empty($time)) {
             $out = userdate($time, get_string('strfdateshortmonth', 'langconfig'));
 
-            $days = '';
-            if ($row->status != CERTIFSTATUS_EXPIRED) {
+            $extra = '';
+            if ($time < time()) {
+                // Window is currently open or expired.
+                if ($row->status != CERTIFSTATUS_EXPIRED) {
+                    $extra = $OUTPUT->notification(get_string('windowopen', 'totara_certification'), 'notifysuccess');
+                } else {
+                    $extra = $OUTPUT->notification(get_string('status_expired', 'totara_certification'), 'notifyproblem');
+                }
+            } else {
+                // Window is sometime in the future.
                 $days_remaining = floor(($time - time()) / 86400);
+
                 if ($days_remaining == 1) {
-                    $days = get_string('onedayremaining', 'totara_program');
+                    $extra = $OUTPUT->notification(get_string('windowopenin1day', 'totara_certification'), 'notifynotice');
                 } else if ($days_remaining < 10 && $days_remaining > 0) {
-                    $days = get_string('daysremaining', 'totara_program', $days_remaining);
-                } else if ($time < time()) {
-                    $days = get_string('overdue', 'totara_plan');
+                    $extra = $OUTPUT->notification(get_string('windowopeninxdays', 'totara_certification', $days_remaining), 'notifynotice');
                 }
-                if ($days != '') {
-                    $out .= html_writer::empty_tag('br') . $OUTPUT->error_text($days);
-                }
+            }
+
+            if (!empty($extra)) {
+                $out .= html_writer::empty_tag('br') . $extra;
             }
         }
         return $out;
@@ -601,7 +679,11 @@ class rb_source_dp_certification extends rb_base_source {
     function rb_display_certif_status($status, $row) {
         global $CERTIFSTATUS;
         if ($status && isset($CERTIFSTATUS[$status])) {
-            return get_string($CERTIFSTATUS[$status], 'totara_certification');
+            $unassigned = '';
+            if ($row->unassigned) {
+                $unassigned = get_string('unassigned', 'rb_source_dp_certification');
+            }
+            return get_string($CERTIFSTATUS[$status], 'totara_certification') .' '. $unassigned;
         }
     }
 

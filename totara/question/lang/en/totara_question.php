@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@ question, use the processed set of questions. There should be functions provided
 $string['error:choosedatatype'] = 'Choose element to add';
 $string['error:elementnotfound'] = 'Question not found';
 $string['error:goalselectionmustallowsomething'] = 'At least one goal type must be allowed when adding goal review items';
-$string['error:reviewmustselectitem'] = 'At least one one item must be reviewed';
+$string['error:reviewmustselectitem'] = 'At least one item must be reviewed';
 $string['error:scorenumeric'] = 'The value for score must be numeric';
 $string['error:selectatleastone'] = 'You must select at least one';
 $string['error:twooptions'] = 'At least two options required';

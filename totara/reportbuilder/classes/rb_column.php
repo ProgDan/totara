@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -360,9 +360,10 @@ class rb_column {
                 }
             }
         }
-        // Add extrafields to the array after the main fields
+        // Add extrafields to the array after the main fields.
         if ($returnextrafields && $extrafields !== null) {
-            foreach ($extrafields as $alias => $extrafield) {
+            foreach ($extrafields as $extrafieldname => $extrafield) {
+                $alias = reportbuilder_get_extrafield_alias($type, $value, $extrafieldname);
                 switch ($aliasmode) {
                     case self::ALIASONLY:
                     case self::CACHE:

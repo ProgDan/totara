@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -245,6 +245,7 @@ $string['position_typeicon'] = 'Position type icon';
 $string['positionatcompletion'] = 'Position at completion';
 $string['positionsarrow'] = 'Positions > ';
 $string['poweredby'] = 'Powered by TotaraLMS';
+$string['execpathnotallowed'] = 'This setting is currently disabled. To enable, add<br />$CFG->preventexecpath = 0;<br /> to config.php';
 $string['proficiency'] = 'Proficiency';
 $string['progdoesntbelongcat'] = 'The program doesn\'t belong to this category';
 $string['programicon'] = 'Program icon';
@@ -307,6 +308,7 @@ $string['toggletotarasyncerror'] = 'Could not enable/disable the totara sync fie
 $string['totarabuild'] = 'Totara build number';
 $string['totaracopyright'] = '<p class="totara-copyright"><a href="http://www.totaralms.com">TotaraLMS</a> is a distribution of Moodle. A "distro" or distribution is a ready-made extended version of the standard product with its own particular focus and vision. Totara is specifically designed for the requirements of corporate, industry and vocational training in contrast to standard Moodle\'s traditional educational setting.</p><p class="totara-copyright"><a href="http://www.totaralms.com">TotaraLMS</a> extensions are Copyright &copy; 2010 onwards, Totara Learning Solutions Limited.</p>';
 $string['totaracore'] = 'Totara core';
+$string['totarafeatures'] = 'Totara features';
 $string['totaralogo'] = 'Totara Logo';
 $string['totaramenu'] = 'Totara Menu';
 $string['totararegistration'] = 'Totara Registration';

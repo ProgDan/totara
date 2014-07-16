@@ -81,6 +81,18 @@ class completion_criteria_grade extends completion_criteria {
     }
 
     /**
+     * Update the criteria information stored in the database
+     *
+     * @param array $data Form data
+     * @return  boolean
+     */
+    public function update_config($data) {
+        $data->criteria_grade_value = unformat_float($data->criteria_grade_value);
+
+        parent::update_config($data);
+    }
+
+    /**
      * Get user's course grade in this course
      *
      * @param completion_completion $completion an instance of completion_completion class

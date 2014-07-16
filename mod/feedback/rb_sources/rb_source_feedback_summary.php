@@ -274,13 +274,13 @@ class rb_source_feedback_summary extends rb_base_source {
             ),
             new rb_content_option(
                 'current_pos',
-                get_string('currentpos', 'rb_source_feedback_questions'),
+                get_string('currentpos', 'totara_reportbuilder'),
                 'position.path',
                 'position'
             ),
             new rb_content_option(
                 'current_org',
-                get_string('currentorg', 'rb_source_feedback_questions'),
+                get_string('currentorg', 'totara_reportbuilder'),
                 'organisation.path',
                 'organisation'
             ),

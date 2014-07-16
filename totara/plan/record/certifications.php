@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,8 +59,8 @@ if (!empty($certifid) && (!$certification = $DB->get_record('prog', array('certi
 }
 
 $context = context_system::instance();
-// users can only view their own and their staff's pages
-// or if they are an admin
+// Users can only view their own and their staff's pages.
+// Or if they are an admin.
 if ($USER->id != $userid && !totara_is_manager($userid) && !has_capability('totara/plan:accessanyplan', $context)) {
     print_error('error:cannotviewpage', 'totara_plan');
 }
@@ -72,11 +72,11 @@ $PAGE->set_pagelayout('noblocks');
 $renderer = $PAGE->get_renderer('totara_reportbuilder');
 
 if ($USER->id != $userid) {
-    $strheading = get_string('recordoflearningfor', 'totara_core').fullname($user, true);
+    $strheading = get_string('recordoflearningfor', 'totara_core') . fullname($user, true);
 } else {
     $strheading = get_string('recordoflearning', 'totara_core');
 }
-// get subheading name for display
+// Get subheading name for display.
 $data = array(
     'userid' => $userid,
 );
@@ -99,8 +99,6 @@ if (!$report = reportbuilder_get_embedded_report($shortname, $data, false, $sid)
     print_error('error:couldnotgenerateembeddedreport', 'totara_reportbuilder');
 }
 
-$log_url = "record/certifications.php?format={$format}&amp;status={$rolstatus}&amp;userid={$userid}&amp;certifid={$certifid}";
-
 $logurl = $PAGE->url->out_as_local_url();
 if ($format != '') {
     add_to_log(SITEID, 'rbembedded', 'record export', $logurl, $report->fullname);
@@ -112,7 +110,7 @@ add_to_log(SITEID, 'rbembedded', 'record view', $logurl, $report->fullname);
 
 $report->include_js();
 
-// Display the page
+// Display the page.
 $PAGE->navbar->add(get_string('mylearning', 'totara_core'), new moodle_url('/my/'));
 $PAGE->navbar->add($strheading, new moodle_url('/totara/plan/record/index.php'));
 $PAGE->navbar->add($strsubheading);
@@ -137,8 +135,6 @@ echo $OUTPUT->heading($strheading.' : '.$strsubheading, 1);
 $currenttab = 'certifications';
 dp_print_rol_tabs($rolstatus, $currenttab, $userid);
 
-// display table here
-$fullname = $report->fullname;
 $countfiltered = $report->get_filtered_count();
 $countall = $report->get_full_count();
 
@@ -152,12 +148,12 @@ $report->display_search();
 // Print saved search buttons if appropriate.
 echo $report->display_saved_search_options();
 
-if ($countfiltered > 0) {
-    echo $renderer->showhide_button($report->_id, $report->shortname);
-    $report->display_table();
-    // export button
-    $renderer->export_select($report->_id, $sid);
-}
+echo $renderer->showhide_button($report->_id, $report->shortname);
+
+$report->display_table();
+
+// Export button.
+$renderer->export_select($report->_id, $sid);
 
 echo $OUTPUT->container_end();
 

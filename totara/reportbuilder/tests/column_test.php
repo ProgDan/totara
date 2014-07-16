@@ -2,11 +2,11 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -478,6 +478,7 @@ class columns_test extends reportcache_advanced_testcase {
     protected $certif_completion_history_data = array(
         'id' => 1, 'certifid' => 1, 'userid' => 2, 'certifpath' => 1, 'status' => 1, 'renewalstatus' => 0,
         'timewindowopens' => 1332153673, 'timeexpires' => 1332113673, 'timecompleted' => null, 'timemodified' => 1332153671,
+        'unassigned' => 0,
     );
 
     protected $course_completion_history_data = array(
@@ -619,7 +620,7 @@ class columns_test extends reportcache_advanced_testcase {
         // Loop through installed sources.
         $sourcelist = reportbuilder::get_source_list(true);
         foreach ($sourcelist as $sourcename => $title) {
-            $sourcecheck = in_array($sourcename, array('dp_certification_history', 'program_completion', 'user', 'courses'));
+            $sourcecheck = in_array($sourcename, array('dp_certification_history', 'program_completion', 'user'));
             // echo '<h3>Title : [' . $title . '] Sourcename : [' . $sourcename . ']</h3>' . "\n";
             $src = reportbuilder::get_source_object($sourcename);
             foreach ($src->columnoptions as $column) {

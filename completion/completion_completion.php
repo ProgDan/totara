@@ -44,7 +44,7 @@ $COMPLETION_STATUS = array(
 
 
 defined('MOODLE_INTERNAL') || die();
-require_once($CFG->dirroot.'/completion/data_object.php');
+require_once("{$CFG->dirroot}/completion/data_object.php");
 require_once("{$CFG->libdir}/completionlib.php");
 require_once("{$CFG->dirroot}/blocks/totara_stats/locallib.php");
 require_once("{$CFG->dirroot}/totara/plan/lib.php");
@@ -283,6 +283,11 @@ class completion_completion extends data_object {
             $this->timecompleted = $timecomplete;
         }
 
+        // Set time started.
+        if (!$this->timestarted) {
+            $this->timestarted = $timecomplete;
+        }
+
         // Get user's positionid and organisationid if not already set
         if ($this->positionid === null) {
             require_once("{$CFG->dirroot}/totara/hierarchy/prefix/position/lib.php");
@@ -324,47 +329,16 @@ class completion_completion extends data_object {
      * Save course completion status
      *
      * This method creates a course_completions record if none exists
+     * and also calculates the timeenrolled date if the record is being
+     * created
+     *
      * @access  private
      * @return  bool
      */
     private function _save() {
-        if ($this->timeenrolled === null) {
-            global $DB;
-
-            // Get earliest current enrolment start date
-            $sql = "SELECT ue.*
-                    FROM {user_enrolments} ue
-                    JOIN {enrol} e ON (e.id = ue.enrolid AND e.courseid = :courseid)
-                    JOIN {user} u ON u.id = ue.userid
-                    WHERE ue.userid = :userid AND ue.status = :active
-                    AND e.status = :enabled AND u.deleted = 0";
-            $params = array(
-                'enabled'  => ENROL_INSTANCE_ENABLED,
-                'active'   => ENROL_USER_ACTIVE,
-                'userid'   => $this->userid,
-                'courseid' => $this->course
-            );
-
-            if ($enrolments = $DB->get_records_sql($sql, $params)) {
-                $now = time();
-                foreach ($enrolments as $e) {
-                    if (!$e->timestart || $e->timestart > $now) {
-                        continue;
-                    }
-
-                    if ($e->timeend && $e->timeend < $now) {
-                        continue;
-                    }
-
-                    if (!$this->timeenrolled || $this->timenrolled > $e->timestart) {
-                        $this->timeenrolled = $e->timestart;
-                    }
-                }
-            }
-
-            if (!$this->timeenrolled) {
-                $this->timeenrolled = 0;
-            }
+        // Make sure timeenrolled is not null
+        if (!$this->timeenrolled) {
+            $this->timeenrolled = 0;
         }
 
         // Update status column
@@ -377,8 +351,54 @@ class completion_completion extends data_object {
 
         // Save record
         if ($this->id) {
+            // Update
             return $this->update();
         } else {
+            // Create new
+            if (!$this->timeenrolled) {
+                global $DB;
+
+                // Get earliest current enrolment start date
+                // This means timeend > now() and timestart < now()
+                $sql = "
+                    SELECT
+                        ue.timestart
+                    FROM
+                        {user_enrolments} ue
+                    JOIN
+                        {enrol} e
+                    ON (e.id = ue.enrolid AND e.courseid = :courseid)
+                    WHERE
+                        ue.userid = :userid
+                    AND ue.status = :active
+                    AND e.status = :enabled
+                    AND (
+                        ue.timeend = 0
+                     OR ue.timeend > :now
+                    )
+                    AND ue.timestart < :now2
+                    ORDER BY
+                        ue.timestart ASC
+                ";
+                $params = array(
+                    'enabled'   => ENROL_INSTANCE_ENABLED,
+                    'active'    => ENROL_USER_ACTIVE,
+                    'userid'    => $this->userid,
+                    'courseid'  => $this->course,
+                    'now'       => time(),
+                    'now2'      => time()
+                );
+
+                if ($enrolments = $DB->get_record_sql($sql, $params, IGNORE_MULTIPLE)) {
+                    $this->timeenrolled = $enrolments->timestart;
+                }
+
+                // If no timeenrolled could be found, use current time
+                if (!$this->timeenrolled) {
+                    $this->timeenrolled = time();
+                }
+            }
+
             // We should always be reaggregating when new course_completions
             // records are created as they might have already completed some
             // criteria before enrolling
@@ -545,15 +565,17 @@ function completion_status_aggregate($method, $data, &$state) {
  * and creates a completion_completion record for the user if
  * completion is enabled for this course
  *
- * @param   integer     $courseid       Course ID
- * @param   integer     $userid         User ID
- * @param   integer     $timestart      Enrolment start timestamp
+ * @param   object      $eventdata
  * @return  boolean
  */
-function completion_start_user($courseid, $userid, $timestart) {
+function completion_start_user(stdClass $eventdata) {
     global $DB;
 
-    // Load course.
+    $courseid = $eventdata->courseid;
+    $userid = $eventdata->userid;
+    $timestart = $eventdata->timestart;
+
+    // Load course
     if (!$course = $DB->get_record('course', array('id' => $courseid))) {
         debugging('Could not load course id '.$courseid);
         return true;
@@ -564,30 +586,24 @@ function completion_start_user($courseid, $userid, $timestart) {
 
     // Check completion is enabled for this site and course.
     if (!$cinfo->is_enabled()) {
-        return false;
+        return true;
     }
 
-    // If completion not set to start on enrollment, do nothing.
+    // If no start on enrol, don't create a record
     if (empty($course->completionstartonenrol)) {
-        return false;
+        return true;
     }
 
-    // Create completion record.
+    // Create completion record
     $data = array(
         'userid'    => $userid,
         'course'    => $course->id
     );
     $completion = new completion_completion($data);
-    if (!$completion->timeenrolled) {
-        $completion->timeenrolled = $timestart;
-    }
+    $completion->mark_enrolled($timestart);
 
-    // Update record.
-    if (!empty($course->completionstartonenrol)) {
-        $completion->mark_inprogress($timestart);
-    } else {
-        $completion->mark_enrolled();
-    }
+    // Review criteria
+    completion_handle_criteria_recalc($course->id, $userid);
 
     return true;
 }
@@ -607,7 +623,8 @@ function completion_start_user_bulk($courseid) {
      * A quick explaination of this horrible looking query
      *
      * It's purpose is to locate all the active participants
-     * of a course with course completion enabled.
+     * of a course with course completion enabled, but without
+     * a course_completions record.
      *
      * We want to record the user's enrolment start time for the
      * course. This gets tricky because there can be multiple
@@ -617,7 +634,7 @@ function completion_start_user_bulk($courseid) {
     $sql = "
         INSERT INTO
             {course_completions}
-            (course, userid, timeenrolled, timestarted, reaggregate)
+            (course, userid, timeenrolled, timestarted, reaggregate, status)
         SELECT
             c.id AS course,
             ue.userid AS userid,
@@ -626,12 +643,9 @@ function completion_start_user_bulk($courseid) {
                 THEN MIN(ue.timestart)
                 ELSE ?
             END,
-            CASE
-                WHEN c.completionstartonenrol = 1
-                THEN ?
-                ELSE 0
-            END,
-            0
+            0,
+            ?,
+            ?
         FROM
             {user_enrolments} ue
         INNER JOIN
@@ -646,6 +660,7 @@ function completion_start_user_bulk($courseid) {
         AND crc.userid = ue.userid
         WHERE
             c.enablecompletion = 1
+        AND c.completionstartonenrol = 1
         AND crc.id IS NULL
         AND c.id = ?
         AND ue.status = ?
@@ -660,10 +675,11 @@ function completion_start_user_bulk($courseid) {
     $params = array(
         $now,
         $now,
+        COMPLETION_STATUS_NOTYETSTARTED,
         $courseid,
         ENROL_USER_ACTIVE,
         ENROL_INSTANCE_ENABLED,
         $now
     );
-    return $DB->execute($sql, $params, true);
+    $DB->execute($sql, $params, true);
 }

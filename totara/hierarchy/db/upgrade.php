@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,17 +24,16 @@
  */
 
 /**
- * Local db upgrades for Totara Core
+ * DB upgrades for Totara Hierarchies
  */
 
 require_once($CFG->dirroot.'/totara/core/db/utils.php');
-
+require_once($CFG->dirroot.'/totara/hierarchy/prefix/position/lib.php');
 
 /**
- * Local database upgrade script
+ * Database upgrade script
  *
  * @param   integer $oldversion Current (pre-upgrade) local db version timestamp
- * @return  boolean $result
  */
 function xmldb_totara_hierarchy_upgrade($oldversion) {
     global $CFG, $DB, $OUTPUT;
@@ -272,6 +271,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
         // Adding indexes to table goal.
         $table->add_index('parentid', XMLDB_INDEX_NOTUNIQUE, array('parentid'));
 
+        // Adding comment to table goal.
+        $table->setComment('Totara Goals');
+
         // Conditionally launch create table for goal.
         if (!$dbman->table_exists($table)) {
             $dbman->create_table($table);
@@ -299,6 +301,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
         // Adding indexes to table goal_framework.
         $table->add_index('goalfram_sor_uix', XMLDB_INDEX_UNIQUE, array('sortorder'));
 
+        // Adding comment to table goal_framework.
+        $table->setComment('A collection of goals');
+
         // Conditionally launch create table for goal_framework.
         if (!$dbman->table_exists($table)) {
             $dbman->create_table($table);
@@ -318,6 +323,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
         // Adding keys to table goal_scale.
         $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
 
+        // Adding comment to table goal_scale.
+        $table->setComment('Scale represents the different levels of achievement of a goal');
+
         // Conditionally launch create table for goal_scale.
         if (!$dbman->table_exists($table)) {
             $dbman->create_table($table);
@@ -335,6 +343,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
 
         // Adding keys to table goal_scale_assignments.
         $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+
+        // Adding comment to table goal_scale_assignments.
+        $table->setComment('Tracks which scales are assigned to which goal frameworks');
 
         // Conditionally launch create table for goal_scale_assignments.
         if (!$dbman->table_exists($table)) {
@@ -362,6 +373,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
         // Adding indexes to table goal_scale_values.
         $table->add_index('goaltype_idn_ix', XMLDB_INDEX_NOTUNIQUE, array('idnumber'));
 
+        // Adding comment to table goal_scale_values.
+        $table->setComment('The individual values that make up a goal scale');
+
         // Conditionally launch create table for goal_scale_values.
         if (!$dbman->table_exists($table)) {
             $dbman->create_table($table);
@@ -381,6 +395,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
         $table->add_key('user_fk', XMLDB_KEY_FOREIGN, array('userid'), 'user', array('id'));
         $table->add_key('goal_fk', XMLDB_KEY_FOREIGN, array('goalid'), 'goal', array('id'));
         $table->add_key('scvl_fk', XMLDB_KEY_FOREIGN, array('scalevalueid'), 'goal_scale_value', array('id'));
+
+        // Adding comment to table goal_record.
+        $table->setComment('Track current status of a user within goals');
 
         // Conditionally launch create table for goal_record.
         if (!$dbman->table_exists($table)) {
@@ -402,6 +419,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
         // Adding keys to table goal_type.
         $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
 
+        // Adding comment to table goal_type.
+        $table->setComment('Goal types are used to manage custom fields');
+
         // Conditionally launch create table for goal_type.
         if (!$dbman->table_exists($table)) {
             $dbman->create_table($table);
@@ -419,6 +439,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
         // Adding keys to table goal_type_info_data.
         $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
         $table->add_key('fieldid', XMLDB_KEY_FOREIGN, array('fieldid'), 'goal_type_info_field', array('id'));
+
+        // Adding comment to table goal_type_info_data.
+        $table->setComment('Stores custom field data related to goals');
 
         // Conditionally launch create table for goal_type_info_data.
         if (!$dbman->table_exists($table)) {
@@ -451,6 +474,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
         // Adding keys to table goal_type_info_field.
         $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
 
+        // Adding comment to table goal_type_info_field.
+        $table->setComment('Stores the custom fields for each goal type');
+
         // Conditionally launch create table for goal_type_info_field.
         if (!$dbman->table_exists($table)) {
             $dbman->create_table($table);
@@ -474,6 +500,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
         $table->add_key('userid', XMLDB_KEY_FOREIGN, array('userid'), 'user', array('id'));
         $table->add_key('goalid', XMLDB_KEY_FOREIGN, array('goalid'), 'goal', array('id'));
 
+        // Adding comment to table goal_user_assignment.
+        $table->setComment('Stores the user assignments of goals');
+
         // Conditionally launch create table for goal_user_assignment.
         if (!$dbman->table_exists($table)) {
             $dbman->create_table($table);
@@ -494,6 +523,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
         $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
         $table->add_key('posid', XMLDB_KEY_FOREIGN, array('posid'), 'pos', array('id'));
         $table->add_key('goalid', XMLDB_KEY_FOREIGN, array('goalid'), 'goal', array('id'));
+
+        // Adding comment to table goal_grp_pos.
+        $table->setComment('Stores the position assignments of goals');
 
         // Conditionally launch create table for goal_grp_pos.
         if (!$dbman->table_exists($table)) {
@@ -516,6 +548,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
         $table->add_key('orgid', XMLDB_KEY_FOREIGN, array('orgid'), 'org', array('id'));
         $table->add_key('goalid', XMLDB_KEY_FOREIGN, array('goalid'), 'goal', array('id'));
 
+        // Adding comment to table goal_grp_org.
+        $table->setComment('Stores the organisation assignments of goals');
+
         // Conditionally launch create table for goal_grp_org.
         if (!$dbman->table_exists($table)) {
             $dbman->create_table($table);
@@ -535,6 +570,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
         $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
         $table->add_key('cohortid', XMLDB_KEY_FOREIGN, array('cohortid'), 'cohort', array('id'));
         $table->add_key('goalid', XMLDB_KEY_FOREIGN, array('goalid'), 'goal', array('id'));
+
+        // Adding comment to table goal_grp_cohort.
+        $table->setComment('Stores the assignments of goals');
 
         // Conditionally launch create table for goal_grp_cohort.
         if (!$dbman->table_exists($table)) {
@@ -563,6 +601,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
         $table->add_key('userid', XMLDB_KEY_FOREIGN, array('userid'), 'user', array('id'));
         $table->add_key('scaleid', XMLDB_KEY_FOREIGN, array('scaleid'), 'goal_scale', array('id'));
         $table->add_key('scalevalueid', XMLDB_KEY_FOREIGN, array('scalevalueid'), 'goal_scale_values', array('id'));
+
+        // Adding comment to table goal_personal.
+        $table->setComment('Totara Goals');
 
         // Conditionally launch create table for goal_personal.
         if (!$dbman->table_exists($table)) {
@@ -648,6 +689,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
         // Adding indexes to table goal_item_history.
         $table->add_index('itemscope', XMLDB_INDEX_NOTUNIQUE, array('scope', 'itemid'));
 
+        // Adding comment to table goal_item_history.
+        $table->setComment('Store changes to scalevalueid in goal_record and goal_personal.');
+
         // Conditionally launch create table for goal_item_history.
         if (!$dbman->table_exists($table)) {
             $dbman->create_table($table);
@@ -676,6 +720,9 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
 
         // Adding indexes to table comp_record_history.
         $table->add_index('comprechist_usecom_ix', XMLDB_INDEX_NOTUNIQUE, array('userid', 'competencyid'));
+
+        // Adding comment to table comp_record_history.
+        $table->setComment('Store changes to proficiency in comp_record.');
 
         // Conditionally launch create table for comp_record_history.
         if (!$dbman->table_exists($table)) {
@@ -842,8 +889,63 @@ function xmldb_totara_hierarchy_upgrade($oldversion) {
                 $dbman->add_key($table, $key);
             }
         }
-        // Cohort savepoint reached.
+        // Savepoint reached.
         upgrade_plugin_savepoint(true, 2013103000, 'totara', 'hierarchy');
+    }
+
+    if ($oldversion < 2013120200) {
+        // Update all position assignments to ensure managerpath is set correctly.
+        global $POSITION_TYPES;
+
+        // May have already been applied in a previous branch.
+        $fixapplied = get_config('totara_hierarchy', 'managerpathfixapplied');
+        if (empty($fixapplied)) {
+
+            // We need to store array of pos_assignments, could be big.
+            raise_memory_limit(MEMORY_HUGE);
+
+            $transaction = $DB->start_delegated_transaction();
+
+            foreach ($POSITION_TYPES as $positiontype => $typestring) {
+                $typename = get_string('type' . $typestring, 'totara_hierarchy');
+
+                // Fill position assignments with manager path data.
+                $assignments = $DB->get_records('pos_assignment', array('type' => $positiontype), 'userid',
+                    'id,userid,managerid,managerpath');
+
+                $totalcount = count($assignments);
+                $i = 0;
+
+                // Build a keyed array for faster access.
+                // Unique key ensures only one userid for each primary position assignment.
+                $manager_relations = array();
+                if ($assignments) {
+                    foreach ($assignments as $assignment) {
+                        $manager_relations[$assignment->userid] = $assignment->managerid;
+                    }
+
+                    $pbar = new progress_bar('fixposassign' . $positiontype, 500, true);
+                    $pbar->update($i, $totalcount, "Fixing {$typename} manager paths - $i/$totalcount.");
+                    foreach ($assignments as $assignment) {
+                        $path = '/' . implode(totara_get_lineage($manager_relations, $assignment->userid), '/');
+                        // Only update if current path is wrong.
+                        if ($assignment->managerpath != $path) {
+                            $todb = new stdClass();
+                            $todb->id = $assignment->id;
+                            $todb->managerpath = $path;
+                            $DB->update_record('pos_assignment', $todb);
+                        }
+
+                        $i++;
+                        $pbar->update($i, $totalcount, "Fixing {$typename} manager paths - $i/$totalcount.");
+                    }
+                }
+            }
+            $transaction->allow_commit();
+            set_config('managerpathfixapplied', 1, 'totara_hierarchy');
+        }
+
+        upgrade_plugin_savepoint(true, 2013120200, 'totara', 'hierarchy');
     }
 
     return true;

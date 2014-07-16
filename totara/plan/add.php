@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -102,8 +102,9 @@ if ($form->is_cancelled()) {
 if ($data = $form->get_data()) {
     if (isset($data->submitbutton)) {
         $transaction = $DB->start_delegated_transaction();
-
-        $data->enddate = totara_date_parse_from_format(get_string('datepickerlongyearparseformat', 'totara_core'), $data->enddate);  // convert to timestamp
+        // Convert to timestamps.
+        $data->startdate = totara_date_parse_from_format(get_string('datepickerlongyearparseformat', 'totara_core'), $data->startdate);
+        $data->enddate = totara_date_parse_from_format(get_string('datepickerlongyearparseformat', 'totara_core'), $data->enddate);
         // Set up the plan
         $newid = $DB->insert_record('dp_plan', $data);
         $data->id = $newid;
@@ -193,7 +194,7 @@ $form->set_data((object)array('userid' => $userid));
 $form->display();
 
 echo $OUTPUT->container_end();
-
+echo build_datepicker_js('input[name="startdate"]');
 echo build_datepicker_js('input[name="enddate"]');
 
 echo $OUTPUT->footer();

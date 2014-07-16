@@ -2,11 +2,11 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -150,11 +150,12 @@ class rb_plan_programs_embedded_cache_test extends reportcache_advanced_testcase
         if ($usecache) {
             $this->enable_caching($this->report_builder_data['id']);
         }
+        $programidalias = reportbuilder_get_extrafield_alias('program', 'proglinkicon', 'program_id');
         $result = $this->get_report_result($this->report_builder_data['shortname'], array('userid' => $this->user1->id,), $usecache);
         $this->assertCount(2, $result);
         $was = array();
         foreach($result as $r) {
-            $this->assertContains($r->program_id, array($this->program1->id, $this->program3->id));
+            $this->assertContains($r->$programidalias, array($this->program1->id, $this->program3->id));
             $this->assertNotContains($r->program_proglinkicon, $was);
             $was[] = $r->program_proglinkicon;
         }
@@ -163,7 +164,7 @@ class rb_plan_programs_embedded_cache_test extends reportcache_advanced_testcase
         $this->assertCount(3, $result);
         $was = array();
         foreach($result as $r) {
-            $this->assertContains($r->program_id, array($this->program2->id, $this->program3->id, $this->program4->id));
+            $this->assertContains($r->$programidalias, array($this->program2->id, $this->program3->id, $this->program4->id));
             $this->assertNotContains($r->program_proglinkicon, $was);
             $was[] = $r->program_proglinkicon;
         }

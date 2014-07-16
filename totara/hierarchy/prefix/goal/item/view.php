@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,9 +33,15 @@ require_login();
 $goalpersonal = goal::get_goal_item(array('id' => $goalpersonalid), goal::SCOPE_PERSONAL);
 $userid = $goalpersonal->userid;
 $context = context_user::instance($userid);
-$can_edit = has_capability('totara/hierarchy:managegoalassignments', context_system::instance())
-     || (totara_is_manager($userid) && has_capability('totara/hierarchy:managestaffpersonalgoal', $context))
-     || ($USER->id == $userid && has_capability('totara/hierarchy:manageownpersonalgoal', $context));
+
+$goal = new goal();
+if (!$permissions = $goal->get_permissions(null, $userid)) {
+    // Error setting up page permissions.
+    print_error('error:viewusergoals', 'totara_hierarchy');
+}
+
+extract($permissions);
+
 $edit_params = array('goalpersonalid' => $goalpersonalid, 'userid' => $userid);
 $edit_url = new moodle_url('/totara/hierarchy/prefix/goal/item/edit_personal.php', $edit_params);
 
@@ -44,7 +50,7 @@ $scale = $DB->get_record('goal_scale', array('id' => $goalpersonal->scaleid));
 
 // Set up the scale value selector.
 if (!empty($goalpersonal->scaleid)) {
-    if ($can_edit) {
+    if ($can_edit[$goalpersonal->assigntype]) {
         $scalevalues = $DB->get_records('goal_scale_values', array('scaleid' => $goalpersonal->scaleid));
         $options = array();
         foreach ($scalevalues as $scalevalue) {
@@ -104,7 +110,7 @@ echo $OUTPUT->header();
 echo html_writer::start_tag('div', array('class' => "view_personal_goal"));
 
 // Create edit button.
-if ($can_edit) {
+if ($can_edit[$goalpersonal->assigntype]) {
     $edit_str = get_string('edit');
     $edit_button = ' ' . $OUTPUT->action_icon($edit_url, new pix_icon('t/edit', $edit_str));
 } else {

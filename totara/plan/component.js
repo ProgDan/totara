@@ -1,7 +1,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,14 +62,15 @@ M.totara_plan_component = M.totara_plan_component || {
             var data = {
                 submitbutton: "1",
                 ajax: "1",
-                sesskey: M.totara_plan_component.config.sesskey
+                sesskey: M.totara_plan_component.config.sesskey,
+                page: M.totara_plan_component.config.page
             };
 
             // Get current value
             data[$(this).attr('name')] = $(this).val();
 
             $.post(
-                M.cfg.wwwroot + '/totara/plan/component.php?id='+M.totara_plan_component.config.plan_id+'&c='+M.totara_plan_component.config.component_name,
+                M.cfg.wwwroot + '/totara/plan/component.php?id='+M.totara_plan_component.config.plan_id+'&c='+M.totara_plan_component.config.component_name+'&page='+M.totara_plan_component.config.page,
                 data,
                 M.totara_plan_component.totara_totara_plan_update
             );

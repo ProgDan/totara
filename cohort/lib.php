@@ -400,12 +400,12 @@ function cohort_print_tabs($currenttab, $cohortid, $cohorttype, $cohort) {
             get_string('visiblelearning', 'totara_cohort'));
     }
 
-    if ($canmanage) {
+    if (!empty($CFG->enablelearningplans) && $canmanage) {
         $toprow[] = new tabobject('plans', new moodle_url('/totara/cohort/learningplan.php', array('id' => $cohortid)),
             get_string('learningplan', 'totara_cohort'));
     }
 
-    if ($canmanage) {
+    if (!empty($CFG->enablegoals) && $canmanage) {
         $toprow[] = new tabobject('goals', new moodle_url('/totara/cohort/goals.php', array('id' => $cohortid)),
             get_string('goals', 'totara_hierarchy'));
     }

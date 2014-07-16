@@ -34,7 +34,7 @@
         <FIELD NAME="reportid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="ID of the report this column belongs to"/>
         <FIELD NAME="type" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Type of column, used with value to identify the column option"/>
         <FIELD NAME="value" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Value of column, used with type to identify the column option"/>
-        <FIELD NAME="heading" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Visible heading describing the column to report users"/>
+        <FIELD NAME="heading" TYPE="char" LENGTH="1024" NOTNULL="false" SEQUENCE="false" COMMENT="Visible heading describing the column to report users"/>
         <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Determines the order that the columns appear in the report"/>
         <FIELD NAME="hidden" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="If non zero then column is hidden from users by default"/>
         <FIELD NAME="customheading" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Indicates whether the user has customised a heading or if they are still using the default column heading value"/>
@@ -52,7 +52,7 @@
         <FIELD NAME="value" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Value of filter, used with type to identify the filter option"/>
         <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Determines the order that the filters appear in the report"/>
         <FIELD NAME="advanced" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="If none zero then the filter is an advanced option"/>
-        <FIELD NAME="filtername" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Visible name describing the filter to report users"/>
+        <FIELD NAME="filtername" TYPE="char" LENGTH="1024" NOTNULL="false" SEQUENCE="false" COMMENT="Visible name describing the filter to report users"/>
         <FIELD NAME="customname" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Indicates whether the user has customised a name or if they are still using the default filter name value"/>
       </FIELDS>
       <KEYS>

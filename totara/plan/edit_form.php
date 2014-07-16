@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -112,9 +112,6 @@ class plan_edit_form extends moodleform {
             return;
         }
 
-        $mform->addElement('date_selector', 'startdate', get_string('datecreated', 'totara_plan'));
-        $mform->freeze('startdate');
-
         if ($action == 'add') {
             if ($canselectplan) {
                 $mform->addElement('select', 'templateid', get_string('plantemplate', 'totara_plan'), $template_options);
@@ -139,6 +136,14 @@ class plan_edit_form extends moodleform {
             $mform->addElement('editor', 'description_editor', get_string('plandescription', 'totara_plan'), null, $TEXTAREA_OPTIONS);
             $mform->setType('description_editor', PARAM_CLEANHTML);
         }
+
+        $mform->addElement('text', 'startdate', get_string('datestarted', 'totara_plan'), array('placeholder' => get_string('datepickerlongyearplaceholder', 'totara_core')));
+        $mform->setType('startdate', PARAM_TEXT);
+        $mform->addRule('startdate', get_string('err_required', 'form'), 'required', '', 'client', false, false);
+        if ($action == 'add') {
+            $mform->setDefault('startdate', userdate(time(), get_string('datepickerlongyearphpuserdate', 'totara_core'), $CFG->timezone, false));
+        }
+
         $mform->addElement('text', 'enddate', get_string('completiondate', 'totara_plan'), array('placeholder' => get_string('datepickerlongyearplaceholder', 'totara_core')));
         $mform->setType('enddate', PARAM_TEXT);
         $mform->addRule('enddate', get_string('err_required', 'form'), 'required', '', 'client', false, false);
@@ -147,7 +152,7 @@ class plan_edit_form extends moodleform {
         }
 
         if ($action == 'view') {
-            $mform->hardFreeze(array('name', 'enddate'));
+            $mform->hardFreeze(array('name', 'startdate', 'enddate'));
             $buttonarray = array();
             if ($plan->get_setting('update') == DP_PERMISSION_ALLOW && $plan->status != DP_PLAN_STATUS_COMPLETE) {
                 $buttonarray[] = $mform->createElement('submit', 'edit', get_string('editdetails', 'totara_plan'));
@@ -188,8 +193,9 @@ class plan_edit_form extends moodleform {
         $mform =& $this->_form;
         $result = array();
 
-        if (in_array($this->_customdata['action'], array('add', 'edit'))) {
-            // Validate edit form
+        $action = $this->_customdata['action'];
+        if (in_array($action, array('add', 'edit'))) {
+            // Validate edit form.
             $startdate = isset($data['startdate']) ? $data['startdate'] : '';
             $enddate = isset($data['enddate']) ? $data['enddate'] : '';
 
@@ -198,8 +204,12 @@ class plan_edit_form extends moodleform {
                 $errstr = get_string('error:dateformat','totara_plan', get_string('datepickerlongyearplaceholder', 'totara_core'));
                 $result['enddate'] = $errstr;
                 unset($errstr);
-            } elseif ( $startdate > totara_date_parse_from_format(get_string('datepickerlongyearparseformat', 'totara_core'), $enddate) && $startdate !== false && $enddate !== false ) {
-                // Enforce start date before finish date
+            } else if (preg_match($datepattern, $startdate, $matches) == 0) {
+                $errstr = get_string('error:dateformat','totara_plan', get_string('datepickerlongyearplaceholder', 'totara_core'));
+                $result['startdate'] = $errstr;
+                unset($errstr);
+            } else if (totara_date_parse_from_format(get_string('datepickerlongyearparseformat', 'totara_core'), $startdate) > totara_date_parse_from_format(get_string('datepickerlongyearparseformat', 'totara_core'), $enddate)) {
+                // Enforce start date before finish date.
                 $errstr = get_string('error:creationaftercompletion', 'totara_plan');
                 $result['enddate'] = $errstr;
                 unset($errstr);

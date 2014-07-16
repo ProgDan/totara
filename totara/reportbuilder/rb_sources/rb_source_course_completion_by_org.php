@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  * Copyright (C) 1999 onwards Martin Dougiamas
  *
  * This program is free software; you can redistribute it and/or modify
@@ -43,6 +43,7 @@ class rb_source_course_completion_by_org extends rb_base_source {
         $this->sourcetitle = get_string('sourcetitle', 'rb_source_course_completion_by_org');
 
         parent::__construct();
+        $this->populate_hierarchy_name_map(array('org'));
     }
 
     //
@@ -125,7 +126,20 @@ class rb_source_course_completion_by_org extends rb_base_source {
                 'organisationpath',
                 get_string('completionorgpath', 'rb_source_course_completion_by_org'),
                 'completion_organisation.path',
-                array('joins' => 'completion_organisation')
+                array(
+                    'joins' => 'completion_organisation',
+                )
+            ),
+            new rb_column_option(
+                'course_completion',
+                'organisationpathtext',
+                get_string('completionorgpathtext', 'rb_source_course_completion_by_org'),
+                'completion_organisation.path',
+                array(
+                    'joins' => 'completion_organisation',
+                    'displayfunc' => 'nice_hierarchy_path',
+                    'extrafields' => array('hierarchytype' => '\'org\'')
+                )
             ),
             new rb_column_option(
                 'course_completion',
@@ -330,10 +344,16 @@ class rb_source_course_completion_by_org extends rb_base_source {
     protected function define_contentoptions() {
         $contentoptions = array(
             new rb_content_option(
-                'current_org',                      // class name
-                get_string('currentorg', 'rb_source_course_completion_by_org'),  // title
-                'organisation.path',                // field
-                'organisation'                      // joins
+                'current_pos',
+                get_string('currentpos', 'totara_reportbuilder'),
+                'position.path',
+                'position'
+            ),
+            new rb_content_option(
+                'current_org',
+                get_string('currentorg', 'totara_reportbuilder'),
+                'organisation.path',
+                'organisation'
             ),
             new rb_content_option(
                 'completed_org',

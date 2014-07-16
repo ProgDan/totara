@@ -1,10 +1,31 @@
 <?php
 /*
- * Unit tests for mod/facetoface/lib.php
+ * This file is part of Totara LMS
+ *
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * @author Chris Wharton <chrisw@catalyst.net.nz>
  * @author Aaron Barnes <aaronb@catalyst.net.nz>
  * @author David Curry <david.curry@totaralms.com>
+ * @package totara
+ * @subpackage facetoface
+ */
+
+/*
+ * Unit tests for mod/facetoface/lib.php
  */
 
 if (!defined('MOODLE_INTERNAL')) {
@@ -70,11 +91,11 @@ class facetofacelib_test extends advanced_testcase {
 
     protected $facetoface_sessions_field_data = array(
         array('id',     'name',     'shortname',    'type',     'possiblevalues',
-            'required',     'defaultvalue',   'isfilter',     'showinsummary'),
-        array(1,    'name1',    'shortname1',   0,  'possible1',    0,  'defaultvalue1',    1,  1),
-        array(2,    'name2',    'shortname2',   2,  'possible2',    0,  'defaultvalue2',    1,  1),
-        array(3,    'name3',    'shortname3',   3,  'possible3',    1,  'defaultvalue3',    1,  1),
-        array(4,    'name4',    'shortname4',   4,  'possible4',    1,  'defaultvalue4',    1,  1),
+            'required',     'defaultvalue',   'showinsummary'),
+        array(1,    'name1',    'shortname1',   0,  'possible1',    0,  'defaultvalue1',    1),
+        array(2,    'name2',    'shortname2',   2,  'possible2',    0,  'defaultvalue2',    1),
+        array(3,    'name3',    'shortname3',   3,  'possible3',    1,  'defaultvalue3',    1),
+        array(4,    'name4',    'shortname4',   4,  'possible4',    1,  'defaultvalue4',    1),
     );
 
     protected $facetoface_sessions_data_data = array(

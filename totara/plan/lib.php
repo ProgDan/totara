@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,6 +60,9 @@ define('DP_PRIORITY_REQUIRED', 2);
 
 // Maximum number of priority options
 define('DP_MAX_PRIORITY_OPTIONS', 5);
+
+// Number of components displayed per page.
+define('DP_COMPONENTS_PER_PAGE', 20);
 
 // Maximum number of required learning to display (programs and certifications)
 define('DP_MAX_PROGS_TO_DISPLAY', 5);
@@ -387,7 +390,8 @@ function dp_get_rol_tabs_visible($userid) {
     $visible[] = 'evidence';
 
     $certification_progs = prog_get_certification_programs($userid, '', '', '', true, true);
-    if ($certification_progs > 0) {
+    $unassignedcertifications = $DB->record_exists('certif_completion_history', array('userid' => $userid, 'unassigned' => 1));
+    if (($certification_progs > 0) || ($unassignedcertifications)) {
         $visible[] = 'certifications';
     }
 
@@ -710,9 +714,10 @@ function dp_display_plans($userid, $statuses=array(DP_PLAN_STATUSAPPROVED), $col
  * @return string $out              the form to display
  */
 function dp_display_plans_menu($userid, $selectedid=0, $role='learner', $rolpage='courses', $rolstatus='none', $showrol=true, $selectedprogid=0, $showrequired=true) {
-    global $OUTPUT, $DB;
+    global $OUTPUT, $DB, $CFG;
     $list = array();
     $attr = array();
+    $enableplans = !empty($CFG->enablelearningplans);
 
     $out = $OUTPUT->container_start(null, 'dp-plans-menu');
 
@@ -732,7 +737,7 @@ function dp_display_plans_menu($userid, $selectedid=0, $role='learner', $rolpage
     }
 
     // Display active plans
-    if ($plans = dp_get_plans($userid, array(DP_PLAN_STATUS_APPROVED))) {
+    if ($enableplans && $plans = dp_get_plans($userid, array(DP_PLAN_STATUS_APPROVED))) {
         if ($role == 'manager') {
             $out .= $OUTPUT->container_start(null, 'dp-plans-menu-section');
             $out .= $OUTPUT->heading(get_string('activeplans', 'totara_plan'), 4, 'dp-plans-menu-sub-header');
@@ -753,7 +758,7 @@ function dp_display_plans_menu($userid, $selectedid=0, $role='learner', $rolpage
     }
 
     // Display unapproved plans
-    if ($plans = dp_get_plans($userid, array(DP_PLAN_STATUS_UNAPPROVED))) {
+    if ($enableplans && $plans = dp_get_plans($userid, array(DP_PLAN_STATUS_UNAPPROVED))) {
         if ($role == 'manager') {
             $out .= $OUTPUT->container_start(null, 'dp-plans-menu-section');
             $out .= $OUTPUT->heading(get_string('unapprovedplans', 'totara_plan'), 4, 'dp-plans-menu-sub-header');
@@ -775,7 +780,7 @@ function dp_display_plans_menu($userid, $selectedid=0, $role='learner', $rolpage
     }
 
     // Display completed plans
-    if ($plans = dp_get_plans($userid, DP_PLAN_STATUS_COMPLETE)) {
+    if ($enableplans && $plans = dp_get_plans($userid, DP_PLAN_STATUS_COMPLETE)) {
         if ($role == 'manager') {
             $out .= $OUTPUT->container_start(null, 'dp-plans-menu-section');
             $out .= $OUTPUT->heading(get_string('completedplans', 'totara_plan'), 4, 'dp-plans-menu-sub-header');

@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,8 @@ defined('MOODLE_INTERNAL') || die;
         new admin_externalpage('managetemplates',
             new lang_string('managetemplates', 'totara_plan'),
             "$CFG->wwwroot/totara/plan/template/index.php",
-            array('totara/plan:configureplans')
+            array('totara/plan:configureplans'),
+            empty($CFG->enablelearningplans)
         )
     );
 
@@ -39,7 +40,8 @@ defined('MOODLE_INTERNAL') || die;
         new admin_externalpage('priorityscales',
             new lang_string('priorityscales', 'totara_plan'),
             "$CFG->wwwroot/totara/plan/priorityscales/index.php",
-            array('totara/plan:configureplans')
+            array('totara/plan:configureplans'),
+            empty($CFG->enablelearningplans)
         )
     );
 
@@ -47,7 +49,8 @@ defined('MOODLE_INTERNAL') || die;
         new admin_externalpage('objectivescales',
             new lang_string('objectivescales', 'totara_plan'),
             "$CFG->wwwroot/totara/plan/objectivescales/index.php",
-            array('totara/plan:configureplans')
+            array('totara/plan:configureplans'),
+            empty($CFG->enablelearningplans)
         )
     );
 
@@ -55,6 +58,8 @@ defined('MOODLE_INTERNAL') || die;
         new admin_externalpage('evidencetypes',
             new lang_string('evidencetypes', 'totara_plan'),
             "$CFG->wwwroot/totara/plan/evidencetypes/index.php",
-            array('totara/plan:configureplans')
+            array('totara/plan:configureplans'),
+            empty($CFG->enablelearningplans)
         )
     );
+

@@ -1189,16 +1189,10 @@ function fix_utf8($value) {
         // No null bytes expected in our data, so let's remove it.
         $value = str_replace("\0", '', $value);
 
-        // Lower error reporting because glibc throws bogus notices.
-        $olderror = error_reporting();
-        if ($olderror & E_NOTICE) {
-            error_reporting($olderror ^ E_NOTICE);
-        }
-
         // Note: this duplicates min_fix_utf8() intentionally.
         static $buggyiconv = null;
         if ($buggyiconv === null) {
-            $buggyiconv = (!function_exists('iconv') or iconv('UTF-8', 'UTF-8//IGNORE', '100'.chr(130).'€') !== '100€');
+            $buggyiconv = (!function_exists('iconv') or @iconv('UTF-8', 'UTF-8//IGNORE', '100'.chr(130).'€') !== '100€');
         }
 
         if ($buggyiconv) {
@@ -1214,11 +1208,7 @@ function fix_utf8($value) {
             }
 
         } else {
-            $result = iconv('UTF-8', 'UTF-8//IGNORE', $value);
-        }
-
-        if ($olderror & E_NOTICE) {
-            error_reporting($olderror);
+            $result = @iconv('UTF-8', 'UTF-8//IGNORE', $value);
         }
 
         return $result;
@@ -4840,6 +4830,7 @@ function remove_course_contents($courseid, $showfeedback = true, array $options 
     require_once($CFG->dirroot.'/tag/coursetagslib.php');
     require_once($CFG->dirroot.'/comment/lib.php');
     require_once($CFG->dirroot.'/rating/lib.php');
+    require_once($CFG->dirroot.'/notes/lib.php');
 
     // Handle course badges.
     badges_handle_course_deletion($courseid);
@@ -5002,6 +4993,9 @@ function remove_course_contents($courseid, $showfeedback = true, array $options 
 
     // filters be gone!
     filter_delete_all_for_context($coursecontext->id);
+
+    // Notes, you shall not pass!
+    note_delete_all($course->id);
 
     // die comments!
     comment::delete_comments($coursecontext->id);
@@ -5543,10 +5537,8 @@ function email_to_user($user, $from, $subject, $messagetext, $messagehtml='', $a
     global $CFG, $FULLME;
 
     // TODO: use ical library instead
-    if (substr($messagehtml, 0, 5) == 'ical:') {
+    if (strpos($attachname, ".ics") !== false) {
         $is_this_an_ical_request = TRUE;
-        $icaltype = substr($messagehtml, 5);
-        $messagehtml = '';
     } else {
         $is_this_an_ical_request = FALSE;
         if ($messagehtml && right_to_left()) {
@@ -5746,7 +5738,7 @@ function email_to_user($user, $from, $subject, $messagetext, $messagehtml='', $a
     }
 
     if ($is_this_an_ical_request) {
-        $mail->ContentType = "text/calendar; name={$icaltype}.ics; method=REQUEST; charset=UTF-8";
+        $mail->ContentType = "text/calendar; name={$attachname}; method=REQUEST; charset=UTF-8";
         $mail->Encoding = '8bit';
         $mail->LE = "\r\n";
         $mail->AddCustomHeader("Content-class: urn:content-classes:calendarmessage\r\n");
@@ -8339,14 +8331,9 @@ function get_plugin_types($fullpaths=true) {
     $cache = cache::make('core', 'plugintypes');
 
     if ($fullpaths) {
-        // First confirm that dirroot and the stored dirroot match.
-        if ($CFG->dirroot === $cache->get('dirroot')) {
-            // They match we can use it.
-            $cached = $cache->get(1);
-        } else {
-            // Oops they didn't match. The moodle directory has been moved on us.
-            $cached = false;
-        }
+        // Cache each dirroot separately in case cluster nodes happen to be deployed to
+        // different locations.
+        $cached = $cache->get(sha1($CFG->dirroot));
     } else {
         $cached = $cache->get(0);
     }
@@ -8406,10 +8393,7 @@ function get_plugin_types($fullpaths=true) {
         }
 
         $cache->set(0, $info);
-        $cache->set(1, $fullinfo);
-        // We cache the dirroot as well so that we can compare it when we
-        // retrieve full info from the cache.
-        $cache->set('dirroot', $CFG->dirroot);
+        $cache->set(sha1($CFG->dirroot), $fullinfo);
 
         return ($fullpaths ? $fullinfo : $info);
     }
@@ -9506,7 +9490,6 @@ function random_string ($length=15) {
     $pool .= 'abcdefghijklmnopqrstuvwxyz';
     $pool .= '0123456789';
     $poollen = strlen($pool);
-    mt_srand ((double) microtime() * 1000000);
     $string = '';
     for ($i = 0; $i < $length; $i++) {
         $string .= substr($pool, (mt_rand()%($poollen)), 1);
@@ -9527,7 +9510,6 @@ function complex_random_string($length=null) {
     $pool  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     $pool .= '`~!@#%^&*()_+-=[];,./<>?:{} ';
     $poollen = strlen($pool);
-    mt_srand ((double) microtime() * 1000000);
     if ($length===null) {
         $length = floor(rand(24,32));
     }
@@ -9835,7 +9817,6 @@ function unformat_float($locale_float, $strict = false) {
  */
 function swapshuffle($array) {
 
-    srand ((double) microtime() * 10000000);
     $last = count($array) - 1;
     for ($i=0;$i<=$last;$i++) {
         $from = rand(0,$last);
@@ -9875,7 +9856,6 @@ function swapshuffle_assoc($array) {
  * @return array
  */
 function draw_rand_array($array, $draws) {
-    srand ((double) microtime() * 10000000);
 
     $return = array();
 
@@ -10651,15 +10631,28 @@ function message_popup_window() {
         $strgomessage = get_string('gotomessages', 'message');
         $strstaymessage = get_string('ignore','admin');
 
+        $notificationsound = null;
+        $beep = get_user_preferences('message_beepnewmessage', '');
+        if (!empty($beep)) {
+            // Browsers will work down this list until they find something they support.
+            $sourcetags =  html_writer::empty_tag('source', array('src' => $CFG->wwwroot.'/message/bell.wav', 'type' => 'audio/wav'));
+            $sourcetags .= html_writer::empty_tag('source', array('src' => $CFG->wwwroot.'/message/bell.ogg', 'type' => 'audio/ogg'));
+            $sourcetags .= html_writer::empty_tag('source', array('src' => $CFG->wwwroot.'/message/bell.mp3', 'type' => 'audio/mpeg'));
+            $sourcetags .= html_writer::empty_tag('embed',  array('src' => $CFG->wwwroot.'/message/bell.wav', 'autostart' => 'true', 'hidden' => 'true'));
+
+            $notificationsound = html_writer::tag('audio', $sourcetags, array('preload' => 'auto', 'autoplay' => 'autoplay'));
+        }
+
         $url = $CFG->wwwroot.'/message/index.php';
         $content =  html_writer::start_tag('div', array('id'=>'newmessageoverlay','class'=>'mdl-align')).
                         html_writer::start_tag('div', array('id'=>'newmessagetext')).
                             $strmessages.
                         html_writer::end_tag('div').
 
-                        html_writer::start_tag('div', array('id'=>'newmessagelinks')).
-                            html_writer::link($url, $strgomessage, array('id'=>'notificationyes')).'&nbsp;&nbsp;&nbsp;'.
-                            html_writer::link('', $strstaymessage, array('id'=>'notificationno')).
+                        $notificationsound.
+                        html_writer::start_tag('div', array('id' => 'newmessagelinks')).
+                            html_writer::link($url, $strgomessage, array('id' => 'notificationyes')).'&nbsp;&nbsp;&nbsp;'.
+                            html_writer::link('', $strstaymessage, array('id' => 'notificationno')).
                         html_writer::end_tag('div');
                     html_writer::end_tag('div');
 

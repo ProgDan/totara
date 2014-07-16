@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,6 +77,9 @@ switch ($action) {
         if ($filter = $DB->get_record('report_builder_filters', array('id' => $fid))) {
             $DB->delete_records('report_builder_filters', array('id' => $fid));
             reportbuilder_set_status($reportid);
+            // Check filtername for multilang spans. Need to set context to use format_string.
+            $PAGE->set_context(context_user::instance($USER->id));
+            $filter->filtername = format_string($filter->filtername);
             echo json_encode((array)$filter);
         } else {
             echo false;

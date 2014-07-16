@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,6 +59,10 @@ class totara_sync_element_user extends totara_sync_element {
         $mform->addElement('selectyesno', 'allowduplicatedemails', get_string('allowduplicatedemails', 'tool_totara_sync'));
         $mform->addElement('static', 'allowduplicatedemailsdesc', '', get_string('allowduplicatedemailsdesc', 'tool_totara_sync'));
 
+        // User password settings.
+        $mform->addElement('selectyesno', 'ignoreexistingpass', get_string('ignoreexistingpass', 'tool_totara_sync'));
+        $mform->addElement('static', 'ignoreexistingpassdesc', '', get_string('ignoreexistingpassdesc', 'tool_totara_sync'));
+
         $mform->addElement('header', 'crudheading', get_string('allowedactions', 'tool_totara_sync'));
         $mform->addElement('checkbox', 'allow_create', get_string('create', 'tool_totara_sync'));
         $mform->setDefault('allow_create', 1);
@@ -72,6 +76,7 @@ class totara_sync_element_user extends totara_sync_element {
     function config_save($data) {
         $this->set_config('sourceallrecords', $data->sourceallrecords);
         $this->set_config('allowduplicatedemails', $data->allowduplicatedemails);
+        $this->set_config('ignoreexistingpass', $data->ignoreexistingpass);
         $this->set_config('allow_create', !empty($data->allow_create));
         $this->set_config('allow_update', !empty($data->allow_update));
         $this->set_config('allow_delete', !empty($data->allow_delete));
@@ -140,6 +145,7 @@ class totara_sync_element_user extends totara_sync_element {
             // Remove the deleted records from the sync table.
             // This ensures that our create/update queries runs smoothly.
             $DB->execute("DELETE FROM {{$synctable}} WHERE deleted = 1");
+            $DB->execute("DELETE FROM {{$synctable_clone}} WHERE deleted = 1");
         }
 
         $issane = $this->check_sanity($synctable, $synctable_clone);
@@ -202,6 +208,7 @@ class totara_sync_element_user extends totara_sync_element {
         if (!empty($this->config->allow_update) && $rsupdateaccounts->valid()) {
             foreach ($rsupdateaccounts as $suser) {
                 $user = $DB->get_record('user', array('id' => $suser->uid));
+
                 if (!empty($this->config->allow_create) && !empty($user->deleted)) {
                     // Revive previously-deleted user.
                     if (undelete_user($user)) {
@@ -221,6 +228,9 @@ class totara_sync_element_user extends totara_sync_element {
                     }
                 }
 
+                // Check if the user is going to be suspended before updating the $user object.
+                $suspenduser = $user->suspended == 0 && $suser->suspended == 1;
+
                 $transaction = $DB->start_delegated_transaction();
 
                 // Update user.
@@ -234,7 +244,7 @@ class totara_sync_element_user extends totara_sync_element {
                 }
 
                 // Update user password.
-                if (isset($suser->password) && trim($suser->password) !== '') {
+                if (empty($this->config->ignoreexistingpass) && isset($suser->password) && trim($suser->password) !== '') {
                     $userauth = get_auth_plugin($user->auth);
                     if ($userauth->can_change_password()) {
                         if (!$userauth->user_update_password($user, $suser->password)) {
@@ -265,6 +275,10 @@ class totara_sync_element_user extends totara_sync_element {
                 $this->addlog(get_string('updateduserx', 'tool_totara_sync', $suser->idnumber), 'info', 'updateusers');
 
                 $transaction->allow_commit();
+
+                if ($suspenduser) {
+                    events_trigger('user_suspended', $user);
+                }
 
                 events_trigger('user_updated', $user);
             }
@@ -480,6 +494,8 @@ class totara_sync_element_user extends totara_sync_element {
         }
 
         $user->auth = isset($suser->auth) ? $suser->auth : 'manual';
+
+        $user->suspended = empty($suser->suspended) ? 0 : $suser->suspended;
     }
 
     /**
@@ -520,6 +536,9 @@ class totara_sync_element_user extends totara_sync_element {
         if (!isset($this->config->allowduplicatedemails)) {
             $this->config->allowduplicatedemails = 0;
         }
+        if (!isset($this->config->ignoreexistingpass)) {
+            $this->config->ignoreexistingpass = 0;
+        }
         if (isset($syncfields->email) && !$this->config->allowduplicatedemails) {
             // Get duplicated emails.
             $badids = $this->get_duplicated_values($synctable, $synctable_clone, 'email', 'duplicateuserswithemailx');
@@ -529,12 +548,6 @@ class totara_sync_element_user extends totara_sync_element {
             $invalidids = array_merge($invalidids, $badids);
             // Check emails against the DB to avoid saving repeated values.
             $badids = $this->check_values_in_db($synctable, 'email', 'duplicateusersemailxdb');
-            $invalidids = array_merge($invalidids, $badids);
-        }
-
-        if (isset($syncfields->password)) {
-            // Get empty passwords.
-            $badids = $this->check_empty_values($synctable, 'password', 'emptyvaluepasswordx');
             $invalidids = array_merge($invalidids, $badids);
         }
 

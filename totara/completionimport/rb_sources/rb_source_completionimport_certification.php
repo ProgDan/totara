@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,7 +49,6 @@ class rb_source_completionimport_certification extends rb_base_source {
         $this->defaultcolumns = $this->define_defaultcolumns();
         $this->defaultfilters = array();
         $this->requiredcolumns = array();
-        $this->sourcewhere = '(base.importerror = 1 OR base.importevidence = 1)'; // Remember to enclose OR in brackets!
         $this->sourcetitle = get_string('sourcetitle', 'rb_source_completionimport_certification');
         parent::__construct();
     }

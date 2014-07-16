@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -308,6 +308,7 @@ $string['componentupdatelongmanager'] = '{$a->component} in learning plan "{$a->
 $string['componentupdatelongmanagerhtml'] = '{$a->component} in learning plan "{$a->planhtml}" updated:<br /> {$a->updateshtml}';
 $string['componentupdateshortlearner'] = '{$a} updated';
 $string['componentupdateshortmanager'] = '{$a->user} updated {$a->component}';
+$string['configenablelearningplans'] = 'If not checked, navigation links to Learning Plans will not be shown';
 $string['confirm'] = 'Confirm';
 $string['confirmcreateplans'] = 'Confirm creation of plans';
 $string['confirmcreateplansmessage'] = 'This will create new learning plans for {$a} user(s).
@@ -410,6 +411,7 @@ $string['editobjective'] = 'Edit objective {$a}';
 $string['editobjectivevalue'] = 'Edit objective value';
 $string['editpriority'] = 'Edit priority {$a}';
 $string['editpriorityvalue'] = 'Edit priority value';
+$string['enablelearningplans'] = 'Show Learning Plans';
 $string['enddate'] = 'End date';
 $string['error:cannotaddscalevalue'] = 'You cannot add a scale value to a scale that is in use';
 $string['error:cannotupdatecompetencies'] = 'Cannot update competencies';

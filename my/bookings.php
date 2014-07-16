@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,9 +27,9 @@ require_once($CFG->dirroot.'/totara/reportbuilder/lib.php');
 
 require_login();
 
-$userid = optional_param('userid', $USER->id, PARAM_INT); // which user to show
+$userid = optional_param('userid', $USER->id, PARAM_INT); // Which user to show.
 $sid = optional_param('sid', '0', PARAM_INT);
-$format = optional_param('format','', PARAM_TEXT); // export format
+$format = optional_param('format','', PARAM_TEXT); // Export format.
 $edit = optional_param('edit', -1, PARAM_BOOL);
 
 $PAGE->set_context(context_system::instance());
@@ -42,7 +42,7 @@ if (!$user = $DB->get_record('user', array('id' => $userid))) {
     print_error('error:usernotfound', 'totara_core');
 }
 
-// users can only view their own and their staff's pages
+// Users can only view their own and their staff's pages.
 if ($USER->id != $userid && !totara_is_manager($userid) && !is_siteadmin()) {
     print_error('error:cannotviewthispage', 'totara_core');
 }
@@ -123,12 +123,12 @@ echo $report->display_saved_search_options();
 
 echo html_writer::empty_tag('br');
 
-if ($countfiltered > 0) {
-    print $renderer->showhide_button($report->_id, $report->shortname);
-    $report->display_table();
-    // export button
-    $renderer->export_select($report->_id, $sid);
-}
+print $renderer->showhide_button($report->_id, $report->shortname);
+
+$report->display_table();
+
+// Export button.
+$renderer->export_select($report->_id, $sid);
 
 echo $OUTPUT->footer();
 

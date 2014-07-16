@@ -27,9 +27,17 @@
     margin: 0;
     background: transparent;
     border: none;
-    float: left;
+    text-align: center;
+    width: 100%;
 }
-
+#notice .singlebutton {
+    padding: 3px 5px;
+}
+#notice .buttons .singlebutton input {
+    margin: 0;
+    white-space: normal;
+    padding: 4px 8px;
+}
 .path-admin .singlebutton div {
     margin: 0;
 }

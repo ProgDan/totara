@@ -5,7 +5,8 @@ html {
     height:100%;
     background:#BFBFB3 url([[pix:theme|nav-bg-tile]]) repeat-x center top;
 }
-body {
+body,
+body.popup {
     height:100%;
     background:#F2F3E1 url([[pix:theme|nav-bg-tile]]) repeat-x center top;
 }
@@ -1273,21 +1274,11 @@ ul.topics li.section .content {
 /**
  * Popup
  */
-#page.popup #wrapper {
-   width:100%;
-   margin:-30px 0 0;
-   padding:0;
+body.popup {
+    background-position-y: -30px;
 }
-#page.popup #wrapper {
-   padding:0px;
-}
-#page.popup #page-content {
-   width:100%;
-   margin:0;
-   padding:0;
-}
-#page.popup #page-content #region-main {
-  padding:0 10px;
+#popup-page {
+    padding-top: 0;
 }
 
 /**

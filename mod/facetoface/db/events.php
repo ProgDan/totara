@@ -1,6 +1,8 @@
 <?php
 /*
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * This file is part of Totara LMS
+ *
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +32,11 @@ $handlers = array (
     'user_deleted' => array(
         'handlerfile'       => '/mod/facetoface/lib.php',
         'handlerfunction'   => 'facetoface_eventhandler_user_deleted',
+        'schedule'          => 'instant'
+    ),
+    'user_suspended' => array(
+        'handlerfile'       => '/mod/facetoface/lib.php',
+        'handlerfunction'   => 'facetoface_eventhandler_user_suspended',
         'schedule'          => 'instant'
     ),
     'user_unenrolled' => array(

@@ -2,11 +2,11 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -103,6 +103,7 @@ class rb_team_members_embedded_cache_test extends reportcache_advanced_testcase 
         if ($usecache) {
             $this->enable_caching($this->report_builder_data['id']);
         }
+        $useridalias = reportbuilder_get_extrafield_alias('user', 'namewithlinks', 'userpic_email');
         $result = $this->get_report_result($this->report_builder_data['shortname'], array(), $usecache);
         $this->assertCount(0, $result);
 
@@ -111,8 +112,8 @@ class rb_team_members_embedded_cache_test extends reportcache_advanced_testcase 
         $was = array();
         foreach($result as $r) {
             $this->assertContains($r->id, array($this->users[1]->id, $this->users[3]->id, $this->users[4]->id));
-            $this->assertNotContains($r->userpic_email, $was);
-            $was[] = $r->userpic_email;
+            $this->assertNotContains($r->$useridalias, $was);
+            $was[] = $r->$useridalias;
         }
 
         $this->setUser($this->users[1]);
@@ -120,8 +121,8 @@ class rb_team_members_embedded_cache_test extends reportcache_advanced_testcase 
         $was = array();
         foreach($result as $r) {
             $this->assertContains($r->id, array($this->users[2]->id, $this->users[5]->id));
-            $this->assertNotContains($r->userpic_email, $was);
-            $was[] = $r->userpic_email;
+            $this->assertNotContains($r->$useridalias, $was);
+            $was[] = $r->$useridalias;
         }
     }
 

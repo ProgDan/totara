@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,7 +33,14 @@ $display    = optional_param('display', false, PARAM_BOOL); // Determines whethe
 require_login();
 
 $context = context_user::instance($userid);
-$syscontext = context_system::instance();
+
+$goal = new goal();
+if (!$permissions = $goal->get_permissions(null, $userid)) {
+    // Error setting up page permissions.
+    print_error('error:viewusergoals', 'totara_hierarchy');
+}
+
+extract($permissions);
 
 // Set up the page.
 $PAGE->set_url(new moodle_url('/totara/hierarchy/prefix/goal/mygoals.php'));
@@ -56,47 +63,6 @@ $PAGE->set_heading($strmygoals);
 $PAGE->set_focuscontrol('');
 $PAGE->set_cacheable(true);
 
-// Set up permissions checks so we don't have to do them everytime.
-if (has_capability('totara/hierarchy:managegoalassignments', $syscontext)) {
-    // Admin permissions, can do anything with this one permission.
-    $can_view_personal = true;
-    $can_edit_personal = true;
-    $can_view_company = true;
-    $can_edit_company = true;
-    $can_edit = array(
-        GOAL_ASSIGNMENT_INDIVIDUAL => true,
-        GOAL_ASSIGNMENT_SELF => true,
-        GOAL_ASSIGNMENT_MANAGER => true,
-        GOAL_ASSIGNMENT_ADMIN => true,
-    );
-} else if (totara_is_manager($userid)) {
-    // Manager permissions.
-    $can_view_personal = has_capability('totara/hierarchy:viewstaffpersonalgoal', $context);
-    $can_edit_personal = has_capability('totara/hierarchy:managestaffpersonalgoal', $context);
-    $can_view_company = has_capability('totara/hierarchy:viewstaffcompanygoal', $context);
-    $can_edit_company = has_capability('totara/hierarchy:managestaffcompanygoal', $context);
-    $can_edit = array(
-        GOAL_ASSIGNMENT_INDIVIDUAL => $can_edit_company,
-        GOAL_ASSIGNMENT_SELF => $can_edit_personal,
-        GOAL_ASSIGNMENT_MANAGER => $can_edit_personal,
-        GOAL_ASSIGNMENT_ADMIN => false,
-    );
-} else if ($userid == $USER->id) {
-    // User permissions.
-    $can_view_personal = has_capability('totara/hierarchy:viewownpersonalgoal', $context);
-    $can_edit_personal = has_capability('totara/hierarchy:manageownpersonalgoal', $context);
-    $can_view_company = has_capability('totara/hierarchy:viewowncompanygoal', $context);
-    $can_edit_company = has_capability('totara/hierarchy:manageowncompanygoal', $context);
-    $can_edit = array(
-        GOAL_ASSIGNMENT_INDIVIDUAL => $can_edit_company,
-        GOAL_ASSIGNMENT_SELF => $can_edit_personal,
-        GOAL_ASSIGNMENT_MANAGER => false,
-        GOAL_ASSIGNMENT_ADMIN => false,
-    );
-} else {
-    // Permissions error!!!
-    print_error('error:viewusergoals', 'totara_hierarchy');
-}
 
 if (!($can_view_company || $can_view_personal)) {
     // If you can't see any goals you shouldn't be on this page.

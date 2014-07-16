@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -178,12 +178,14 @@ class organisation extends hierarchy {
         echo html_writer::empty_tag('br');
 
         // Display all goals assigned to this item.
-        $addgoalparam = array('assignto' => $item->id, 'assigntype' => GOAL_ASSIGNMENT_ORGANISATION, 'sesskey' => sesskey());
-        $addgoalurl = new moodle_url('/totara/hierarchy/prefix/goal/assign/find.php', $addgoalparam);
-        echo html_writer::start_tag('div', array('class' => 'list-assigned-goals'));
-        echo $OUTPUT->heading(get_string('goalsassigned', 'totara_hierarchy'));
-        echo $renderer->print_assigned_goals($this->prefix, $this->shortprefix, $addgoalurl, $item->id);
-        echo html_writer::end_tag('div');
+        if (!empty($CFG->enablegoals) && !is_ajax_request($_SERVER)) {
+            $addgoalparam = array('assignto' => $item->id, 'assigntype' => GOAL_ASSIGNMENT_ORGANISATION, 'sesskey' => sesskey());
+            $addgoalurl = new moodle_url('/totara/hierarchy/prefix/goal/assign/find.php', $addgoalparam);
+            echo html_writer::start_tag('div', array('class' => 'list-assigned-goals'));
+            echo $OUTPUT->heading(get_string('goalsassigned', 'totara_hierarchy'));
+            echo $renderer->print_assigned_goals($this->prefix, $this->shortprefix, $addgoalurl, $item->id);
+            echo html_writer::end_tag('div');
+        }
     }
 
     /**

@@ -45,6 +45,7 @@ $handlers = array(
  * TODO: this has to be moved into separate queueing framework....
  * TODO: MDL-25508, MDL-41541
  */
+
     'portfolio_send' => array (
         'handlerfile'      => '/lib/portfoliolib.php',
         'handlerfunction'  => 'portfolio_handle_event',    // argument to call_user_func(), could be an array
@@ -54,7 +55,12 @@ $handlers = array(
 
     'completion_criteria_calc' => array(
         'handlerfile'       => '/completion/completion_criteria_completion.php',
-        'handlerfunction'   => 'completion_handle_criteria_calc',
+        'handlerfunction'   => 'completion_handle_criteria_course_calc',
+        'schedule'          => 'instant'
+    ),
+    'user_enrolled' => array(
+        'handlerfile'       => '/completion/completion_completion.php',
+        'handlerfunction'   => 'completion_start_user',
         'schedule'          => 'instant'
     ),
 
@@ -103,6 +109,7 @@ course_updated - object course table record
 course_content_removed - object course table record + context property
 course_deleted - object course table record + context property
 course_restored - custom object with courseid, userid and restore information
+course_completed - object course_completions table record
 
 user_enrolled - object record from user_enrolments table + courseid,enrol
 user_enrolled_bulk - object record from user_enrolments table + courseid,enrol
@@ -114,7 +121,6 @@ completion_criteria_change - object containing course record and startonenrol st
 completion_criteria_calc - object containing course_completion_crit_compl record
 
 ==== cohort related events ===
-
 
 cohort_added - object cohort table record
 cohort_updated - object cohort table record

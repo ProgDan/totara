@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,34 +22,42 @@
  * @subpackage totara_appraisal
  */
 
-global $SITE;
+global $SITE, $CFG;
 
-if ($hassiteconfig || has_any_capability(array(
-            'totara/appraisal:manageappraisals',
-            'totara/appraisal:cloneappraisal',
-            'totara/appraisal:assignappraisaltogroup',
-            'totara/appraisal:managenotifications',
-            'totara/appraisal:manageactivation',
-            'totara/appraisal:managepageelements'), $systemcontext)) {
+$capabilities = array(
+    'totara/appraisal:manageappraisals',
+    'totara/appraisal:cloneappraisal',
+    'totara/appraisal:assignappraisaltogroup',
+    'totara/appraisal:managenotifications',
+    'totara/appraisal:manageactivation',
+    'totara/appraisal:managepageelements');
+
+if ($hassiteconfig || has_any_capability($capabilities, $systemcontext)) {
 
     $ADMIN->add('appraisals',
         new admin_externalpage('manageappraisals',
             new lang_string('manageappraisals', 'totara_appraisal'),
-            new moodle_url('/totara/appraisal/manage.php')
+            new moodle_url('/totara/appraisal/manage.php'),
+            $capabilities,
+            empty($CFG->enableappraisals)
         )
     );
 
     $ADMIN->add('appraisals',
         new admin_externalpage('managefeedback360',
             new lang_string('managefeedback360', 'totara_feedback360'),
-            new moodle_url('/totara/feedback360/manage.php')
+            new moodle_url('/totara/feedback360/manage.php'),
+            $capabilities,
+            empty($CFG->enablefeedback360)
         )
     );
 
     $ADMIN->add('appraisals',
         new admin_externalpage('reportappraisals',
             new lang_string('reportappraisals', 'totara_appraisal'),
-            new moodle_url('/totara/appraisal/reports.php')
+            new moodle_url('/totara/appraisal/reports.php'),
+            $capabilities,
+            empty($CFG->enableappraisals)
         )
     );
 }

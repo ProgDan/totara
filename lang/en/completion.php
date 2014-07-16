@@ -133,7 +133,7 @@ $string['err_nocourses'] = 'Course completion is not enabled for any other cours
 $string['err_nograde'] = 'A course pass grade has not been set for this course. To enable this criteria type you must create a pass grade for this course.';
 $string['err_noroles'] = 'There are no roles with the capability moodle/course:markcomplete in this course.';
 $string['err_nousers'] = 'There are no students on this course or group for whom completion information is displayed. (By default, completion information is displayed only for students, so if there are no students, you will see this error. Administrators can alter this option via the admin screens.)';
-$string['err_settingslocked'] = 'One or more students have already completed a criteria so the settings have been locked. Unlocking the completion criteria settings will delete any existing user data and may cause confusion.';
+$string['err_settingslocked'] = 'One or more students have already completed a criterion so the settings have been locked. Unlocking the completion criteria settings will delete any existing user data and may cause confusion.';
 $string['err_settingsunlockable'] = '<p>Modifying course completion criteria after some users have already completed the course is not recommended since it means different users will be marked as complete for different reasons.</p><p>At this point you can choose to delete all completion records for users who have already achieved this course. Their completion status will be recalculated using the new criteria next time the cron runs, so they may be marked as complete again.</p><p>Alternatively you can choose to keep all existing course completion records and accept that different users may have received their status for different accomplishments.</p>';
 $string['err_system'] = 'An internal error occurred in the completion system. (System administrators can enable debugging information to see more detail.)';
 $string['error:databaseupdatefailed'] = 'Database update failed';
@@ -238,7 +238,9 @@ $string['archivecompletions'] = 'Completions archive';
 $string['cannotarchivecompletions'] = 'No permission to archive this course completions';
 $string['archivingcompletions'] = 'Archiving completions for course {$a}';
 $string['archivedcompletions'] = 'Archived completions for course : {$a}';
-$string['archivecompletionscheck'] = 'Are you sure you want to archive all completion records for users completed on this course?';
+$string['archivecompletionscheck'] = 'Are you sure you want to archive all completion records for users completed on this course?
+    <br />
+    This will store a limited historical record of the completions and then delete them completely.';
 $string['archivecheck'] = 'Archive {$a} ?';
 $string['nouserstoarchive'] = 'There are no users that have completed this course';
 $string['archiveusersaffected'] = '{$a} users will be affected';

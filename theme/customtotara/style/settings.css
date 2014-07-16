@@ -49,11 +49,25 @@ a.link-as-button:hover {
 #page-header, #page-footer, .block > .header {
     background-color: [[setting:headerbgc]];
 }
-th.header, td.header, div.header {
+th.header,
+td.header,
+div.header h1,
+div.header h2,
+div.header h3,
+div.header h4,
+div.header h5,
+div.header h6 {
     background-color: [[setting:headerbgc]];
+    color: [[setting:text-on-headerbgc]];
 }
 .totara-dialog .ui-dialog-titlebar {
     background-color: [[setting:headerbgc]];
+}
+#page-header-wrapper {
+    color: [[setting:text-on-headerbgc]];
+}
+#page-footer .footer-powered {
+    color: [[setting:text-on-headerbgc]];
 }
 
 /** Custom CSS defined via theme settings **/

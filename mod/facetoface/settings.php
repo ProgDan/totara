@@ -2,11 +2,11 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -79,13 +79,33 @@ $settings->add(new admin_setting_configselect('facetoface_bulkaddsource',
         new lang_string('setting:bulkaddsource_caption', 'facetoface'),
         new lang_string('setting:bulkaddsource', 'facetoface'), 'bulkaddsourceidnumber', $menu));
 
-// Export
+// Export.
 $settings->add(new admin_setting_heading('facetoface_export_header', new lang_string('exportheading', 'facetoface'), ''));
 $settings->add(new admin_setting_configtext('facetoface_export_userprofilefields', new lang_string('exportuserprofilefields', 'facetoface'), new lang_string('exportuserprofilefields_desc', 'facetoface'), 'firstname,lastname,idnumber,institution,department,email', PARAM_TEXT));
 
 $settings->add(new admin_setting_configtext('facetoface_export_customprofilefields', new lang_string('exportcustomprofilefields', 'facetoface'), new lang_string('exportcustomprofilefields_desc', 'facetoface'), '', PARAM_TEXT));
 
-// List of existing custom fields
+// Create array with existing custom fields (if any), empty array otherwise.
+$customfields = array();
+$allcustomfields = facetoface_get_session_customfields();
+foreach ($allcustomfields as $fieldid => $fielname) {
+    $customfields[$fieldid] = $fielname->name;
+}
+
+// List of facetoface session fields that can be selected as filters.
+$settings->add(new admin_setting_heading('facetoface_calendarfilters_header', new lang_string('calendarfiltersheading', 'facetoface'), ''));
+$calendarfilters = array(
+    'timestart'  => get_string('startdateafter', 'facetoface'),
+    'timefinish' => get_string('finishdatebefore', 'facetoface'),
+    'room'       => get_string('room', 'facetoface'),
+    'building'   => get_string('building', 'facetoface'),
+    'address'    => get_string('address', 'facetoface'),
+    'capacity'   => get_string('capacity', 'facetoface')
+);
+$calendarfilters = $calendarfilters + $customfields;
+$settings->add(new admin_setting_configmultiselect('facetoface_calendarfilters', new lang_string('setting:calendarfilterscaption', 'facetoface'), new lang_string('setting:calendarfilters', 'facetoface'), array(), $calendarfilters));
+
+// List of existing custom fields.
 $html = facetoface_list_of_customfields();
 $html .= html_writer::start_tag('p');
 $url = new moodle_url('/mod/facetoface/customfield.php', array('id' => 0));
@@ -94,7 +114,7 @@ $html .= html_writer::end_tag('p');
 
 $settings->add(new admin_setting_heading('facetoface_customfields_header', new lang_string('customfieldsheading', 'facetoface'), $html));
 
-// List of existing site notices
+// List of existing site notices.
 $html = html_writer::start_tag('p');
 $url = html_writer::link(new moodle_url('/blocks/facetoface/calendar.php'), new lang_string('setting:sitenoticeshere', 'facetoface'));
 $html .= new lang_string('setting:sitenotices', 'facetoface', $url);
@@ -107,7 +127,7 @@ $html .= html_writer::end_tag('p');
 
 $settings->add(new admin_setting_heading('facetoface_sitenotices_header', new lang_string('sitenoticesheading', 'facetoface'), $html));
 
-// Link to notification templates
+// Link to notification templates.
 $html = html_writer::start_tag('p');
 $url = new moodle_url('/mod/facetoface/notification/template/');
 $html .= html_writer::link($url, new lang_string('managenotificationtemplates', 'facetoface'));
@@ -115,7 +135,7 @@ $html .= html_writer::end_tag('p');
 
 $settings->add(new admin_setting_heading('facetoface_notification_template', new lang_string('notificationtemplates', 'facetoface'), $html));
 
-// Link to rooms
+// Link to rooms.
 $html = html_writer::start_tag('p');
 $url = new moodle_url('/mod/facetoface/room/manage.php');
 $html .= html_writer::link($url, new lang_string('managerooms', 'facetoface'));

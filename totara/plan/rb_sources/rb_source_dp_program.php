@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -111,6 +111,10 @@ class rb_source_dp_program extends rb_base_source {
 
         $this->add_course_category_table_to_joinlist($joinlist, 'base', 'category');
         $this->add_cohort_program_tables_to_joinlist($joinlist, 'base', 'id');
+        $this->add_user_table_to_joinlist($joinlist, 'program_completion', 'userid');
+        $this->add_position_tables_to_joinlist($joinlist, 'program_completion', 'userid');
+        $this->add_manager_tables_to_joinlist($joinlist, 'position_assignment', 'reportstoid');
+        $this->add_cohort_user_tables_to_joinlist($joinlist, 'program_completion', 'userid');
 
         return $joinlist;
     }
@@ -242,7 +246,11 @@ class rb_source_dp_program extends rb_base_source {
             )
         );
 
-        // include some standard columns
+        // Include some standard columns.
+        $this->add_user_fields_to_columns($columnoptions);
+        $this->add_position_fields_to_columns($columnoptions);
+        $this->add_manager_fields_to_columns($columnoptions);
+        $this->add_cohort_user_fields_to_columns($columnoptions);
         $this->add_course_category_fields_to_columns($columnoptions, 'course_category', 'base');
         $this->add_cohort_program_fields_to_columns($columnoptions);
 
@@ -314,6 +322,10 @@ class rb_source_dp_program extends rb_base_source {
                 'number'
         );
 
+        $this->add_user_fields_to_filters($filteroptions);
+        $this->add_position_fields_to_filters($filteroptions);
+        $this->add_manager_fields_to_filters($filteroptions);
+        $this->add_cohort_user_fields_to_filters($filteroptions);
         $this->add_course_category_fields_to_filters($filteroptions, 'base', 'category');
         $this->add_cohort_program_fields_to_filters($filteroptions);
 
@@ -366,10 +378,14 @@ class rb_source_dp_program extends rb_base_source {
     protected function define_defaultcolumns() {
         $defaultcolumns = array(
             array(
+                'type' => 'user',
+                'value' => 'namelink',
+            ),
+            array(
                 'type' => 'program',
                 'value' => 'proglinkicon',
             ),
-        array(
+            array(
                 'type' => 'course_category',
                 'value' => 'namelink',
             ),
@@ -380,11 +396,16 @@ class rb_source_dp_program extends rb_base_source {
     protected function define_defaultfilters() {
         $defaultfilters = array(
             array(
+                'type' => 'user',
+                'value' => 'fullname',
+                'advanced' => 0,
+            ),
+            array(
                 'type' => 'program',
                 'value' => 'fullname',
                 'advanced' => 0,
             ),
-        array(
+            array(
                 'type' => 'course_category',
                 'value' => 'id',
                 'advanced' => 0,

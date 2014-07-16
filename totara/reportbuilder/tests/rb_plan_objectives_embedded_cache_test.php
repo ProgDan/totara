@@ -2,11 +2,11 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010-2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -118,12 +118,13 @@ class rb_plan_objectives_embedded_cache_test extends reportcache_advanced_testca
         if ($usecache) {
             $this->enable_caching($this->report_builder_data['id']);
         }
+        $objectiveidalias = reportbuilder_get_extrafield_alias('objective', 'fullnamelink', 'objective_id');
         $result = $this->get_report_result($this->report_builder_data['shortname'],
                             array('userid' => $this->user1->id), $usecache);
         $this->assertCount(2, $result);
         $was = array('');
         foreach($result as $r) {
-            $this->assertContains($r->objective_id, array($this->objectives[0]->id, $this->objectives[1]->id));
+            $this->assertContains($r->$objectiveidalias, array($this->objectives[0]->id, $this->objectives[1]->id));
             $this->assertNotContains($r->objective_fullnamelink, $was);
             $was[] = $r->objective_fullnamelink;
         }
@@ -133,7 +134,7 @@ class rb_plan_objectives_embedded_cache_test extends reportcache_advanced_testca
         $this->assertCount(4, $result);
         $was = array('');
         foreach($result as $r) {
-            $this->assertContains($r->objective_id, array($this->objectives[2]->id,
+            $this->assertContains($r->$objectiveidalias, array($this->objectives[2]->id,
                 $this->objectives[3]->id, $this->objectives[4]->id, $this->objectives[5]->id));
             $this->assertNotContains($r->objective_fullnamelink, $was);
             $was[] = $r->objective_fullnamelink;

@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -357,7 +357,7 @@ abstract class dp_base_component {
         $table->no_sorting('actions');
         $table->no_sorting('comments');
         $table->setup();
-        $table->pagesize(20, $count);
+        $table->pagesize(DP_COMPONENTS_PER_PAGE, $count);
 
         // Load items for table
         $page_start = $table->get_page_start();

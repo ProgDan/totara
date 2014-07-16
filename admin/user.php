@@ -168,6 +168,7 @@
                 // force logout
                 session_kill_user($user->id);
                 events_trigger('user_updated', $user);
+                events_trigger('user_suspended', $user);
             }
         }
         redirect($returnurl);

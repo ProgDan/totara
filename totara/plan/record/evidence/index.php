@@ -2,11 +2,11 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation; either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -29,10 +29,11 @@ require_once($CFG->dirroot.'/totara/plan/lib.php'); // Is this needed?
 
 require_login();
 
-$userid = optional_param('userid', $USER->id, PARAM_INT); // which user to show, default to current user
+$userid = optional_param('userid', $USER->id, PARAM_INT); // Which user to show, default to current user.
 $sid = optional_param('sid', '0', PARAM_INT);
-$format = optional_param('format', '', PARAM_TEXT); // export format
+$format = optional_param('format', '', PARAM_TEXT); // Export format.
 $rolstatus = optional_param('status', 'all', PARAM_ALPHA);
+
 if (!in_array($rolstatus, array('active','completed','all'))) {
     $rolstatus = 'all';
 }
@@ -77,7 +78,7 @@ add_to_log(SITEID, 'rbembedded', 'record view', $logurl, $report->fullname);
 
 $report->include_js();
 
-// Display the page
+// Display the page.
 $strsubheading = get_string('allevidence', 'totara_plan');
 $PAGE->navbar->add(get_string('mylearning', 'totara_core'), new moodle_url('/my/'));
 $PAGE->navbar->add($strheading, new moodle_url('/totara/plan/record/index.php'));
@@ -97,9 +98,9 @@ echo $OUTPUT->heading($strheading.' : '.$strsubheading, 1);
 
 dp_print_rol_tabs($rolstatus, 'evidence', $userid);
 
-// display table here
 $countfiltered = $report->get_filtered_count();
 $countall = $report->get_full_count();
+
 $renderer = $PAGE->get_renderer('totara_reportbuilder');
 $heading = $renderer->print_result_count_string($countfiltered, $countall);
 echo $OUTPUT->heading($heading);
@@ -115,12 +116,12 @@ print $OUTPUT->single_button(
         new moodle_url("/totara/plan/record/evidence/edit.php",
                 array('id' => 0, 'userid' => $userid)), get_string('addevidence', 'totara_plan'), 'get');
 
-if ($countfiltered > 0 ) {
-    echo $renderer->showhide_button($report->_id, $report->shortname);
-    $report->display_table();
-    // export button
-    $renderer->export_select($report->_id, $sid);
-}
+echo $renderer->showhide_button($report->_id, $report->shortname);
+
+$report->display_table();
+
+// Export button.
+$renderer->export_select($report->_id, $sid);
 
 echo $OUTPUT->container_end();
 

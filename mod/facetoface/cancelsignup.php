@@ -1,10 +1,29 @@
 <?php
+/*
+ * This file is part of Totara LMS
+ *
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @package modules
+ * @subpackage facetoface
+ */
 
 require_once '../../config.php';
 require_once 'lib.php';
 require_once 'cancelsignup_form.php';
-
-global $DB;
 
 $s  = required_param('s', PARAM_INT); // facetoface session ID
 $confirm           = optional_param('confirm', false, PARAM_BOOL);
@@ -43,9 +62,15 @@ if ($fromform = $mform->get_data()) { // Form submitted
         print_error('error:unknownbuttonclicked', 'facetoface', $returnurl);
     }
 
+    $forcecancel = false;
+    $timenow = time();
+    $bookedsession = facetoface_get_user_submissions($facetoface->id, $USER->id, MDL_F2F_STATUS_WAITLISTED, MDL_F2F_STATUS_WAITLISTED, $session->id);
+    if (!empty($bookedsession) && facetoface_has_session_started($session, $timenow)) {
+        $forcecancel = true;
+    }
 
     $errorstr = '';
-    if (facetoface_user_cancel($session, false, false, $errorstr, $fromform->cancelreason)) {
+    if (facetoface_user_cancel($session, false, $forcecancel, $errorstr, $fromform->cancelreason)) {
         add_to_log($course->id, 'facetoface', 'cancel booking', "cancelsignup.php?s=$session->id", $facetoface->id, $cm->id);
 
         $message = get_string('bookingcancelled', 'facetoface');

@@ -122,6 +122,13 @@ class login_change_password_form extends moodleform {
         $oldpasswordssql = 'SELECT * FROM {oldpassword} WHERE uid = ? ORDER BY id desc';
         $oldpasswords = $DB->get_records_sql($oldpasswordssql, array($USER->id), 0, $limit);
         foreach ($oldpasswords as $oldpassword) {
+            // Match against new bcrypt style password.
+            if (password_verify($password, $oldpassword->hash)) {
+                return true;
+            }
+
+            // Now check for legacy password algorithm.
+
             if (md5($password . $CFG->passwordsaltmain) == $oldpassword->hash) {
                 // User tried to use a password they had previously set with the current salt
                 return true;

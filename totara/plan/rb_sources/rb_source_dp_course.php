@@ -2,7 +2,7 @@
 /*
  * This file is part of Totara LMS
  *
- * Copyright (C) 2010 - 2013 Totara Learning Solutions LTD
+ * Copyright (C) 2010 onwards Totara Learning Solutions LTD
  * Copyright (C) 1999 onwards Martin Dougiamas 
  * 
  * This program is free software; you can redistribute it and/or modify  
@@ -203,6 +203,9 @@ from
 
         $this->add_course_table_to_joinlist($joinlist, 'base', 'courseid');
         $this->add_user_table_to_joinlist($joinlist, 'base','userid');
+        $this->add_position_tables_to_joinlist($joinlist, 'base', 'userid');
+        $this->add_manager_tables_to_joinlist($joinlist, 'position_assignment', 'reportstoid');
+        $this->add_cohort_user_tables_to_joinlist($joinlist, 'base', 'userid');
         $this->add_cohort_course_tables_to_joinlist($joinlist, 'base', 'courseid');
 
         return $joinlist;
@@ -314,8 +317,6 @@ from
                     'displayfunc' => 'nice_date'
                 )
         );
-
-        $this->add_user_fields_to_columns($columnoptions);
 
         $columnoptions[] = new rb_column_option(
                 'template',
@@ -439,6 +440,11 @@ from
                     'joins' => 'course_completion_history',
                 )
              );
+
+        $this->add_user_fields_to_columns($columnoptions);
+        $this->add_position_fields_to_columns($columnoptions);
+        $this->add_manager_fields_to_columns($columnoptions);
+        $this->add_cohort_user_fields_to_columns($columnoptions);
         $this->add_cohort_course_fields_to_columns($columnoptions);
 
         return $columnoptions;
@@ -505,6 +511,9 @@ from
         );
 
         $this->add_user_fields_to_filters($filteroptions);
+        $this->add_position_fields_to_filters($filteroptions);
+        $this->add_manager_fields_to_filters($filteroptions);
+        $this->add_cohort_user_fields_to_filters($filteroptions);
         $this->add_cohort_course_fields_to_filters($filteroptions);
 
         return $filteroptions;
